@@ -42,10 +42,17 @@ account list is at the grain a salesperson thinks in.
       and poisons the surrounding `OR`/`NOT` chain) — wrapped in `COALESCE`.
 - [x] `silver_companies` table (`data/silver/companies.parquet`) + explicit
       `unresolved` bucket (not written to the table, reported as a count)
-- [x] Resolution-yield report: **187,188 resolved companies** out of 8.9M
+- [x] Resolution-yield report: **187,007 resolved companies** out of 8.9M
       host rows — 9.0% domain-tier, 13.0% org-tier, 78.0% unresolved
       (expected and by design: precision over recall, and this dataset's
       `org`/`isp` fields skew heavily toward hyperscaler/CDN tenant IPs)
+- [x] Fixed on review: `company_key` punctuation normalization (merged 181
+      duplicate rows, e.g. "meteverse limited" vs "meteverse limited.") and
+      a `likely_infra_or_proxy` flag (org-tier, host_count >= 500 - no real
+      single business owns that many IPs with no backing domain). Flags
+      237 companies (0.13% of resolved companies) holding **780,194 hosts —
+      ~40% of all resolved host volume** — confirms these would have
+      dominated any volume-based scoring signal if left untreated.
 
 ## Sprint 3 — Scoring & Gold
 **Epic:** As an SDR, I want every company ranked by fit x urgency with the
