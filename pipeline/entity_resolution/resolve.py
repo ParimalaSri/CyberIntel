@@ -46,7 +46,7 @@ DYNAMIC_PTR_REGEX = r'^(ip-)?[0-9]+(-[0-9]+){2,}'
 SQL = f"""
 WITH base AS (
     SELECT
-        ip_str, port, org, isp, asn, country_code, country_name, city,
+        ip_str, port, ts, org, isp, asn, country_code, country_name, city,
         hostnames, domains,
         CASE WHEN len(domains) > 0 THEN
             list_filter(domains, d -> lower(d) NOT IN ({SHARED_INFRA_SQL_LIST}))[1]
@@ -144,7 +144,7 @@ def main():
     print(f"\nWriting {MAP_OUT_PATH} ...")
     con.execute(f"""
         COPY (
-            SELECT ip_str, port, company_key, resolution_tier
+            SELECT ip_str, port, ts, company_key, resolution_tier
             FROM keyed
             WHERE resolution_tier IN ('domain', 'org')
         ) TO '{MAP_OUT_PATH}' (FORMAT PARQUET, COMPRESSION ZSTD)
