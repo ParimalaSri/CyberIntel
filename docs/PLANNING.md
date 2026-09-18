@@ -4,7 +4,7 @@
 
 A cybersecurity software company's sales team needs to know, out of thousands of
 businesses, **who to contact first**. We were handed a raw Shodan internet-scan
-export (~4.2M host/service observations, 84.6GB JSONL) and asked to turn it into
+export (~8.9M host/service observations, 84.6GB JSONL) and asked to turn it into
 a prospecting tool.
 
 ## Who this is for
@@ -17,7 +17,7 @@ one is ranked where it is, and a person to call.
 
 1. **Account discovery & prioritisation (Fit x Urgency score).**
    The dataset is service/banner-level, not company-level. The core value we can
-   add is rolling ~4.2M host rows up into a per-company account list ranked by
+   add is rolling ~8.9M host rows up into a per-company account list ranked by
    how good a fit they are *and* how exposed they are right now. This is the
    textbook B2B account-scoring model (ICP fit score x intent/signal score) and
    it's the one thing a rules engine alone can't do well, because "fit" and
@@ -55,7 +55,7 @@ one is ranked where it is, and a person to call.
 - We are not building a CRM, a sequencer, or an auto-send outreach tool.
 - We are not running our own vulnerability scanner — we work from the Shodan
   export as given, plus optional light enrichment.
-- We are not attempting to resolve every one of the ~4.2M host rows to a
+- We are not attempting to resolve every one of the ~8.9M host rows to a
   company. A large fraction are cloud-tenant IPs with no addressable owner —
   Silver Companies carries an explicit "unresolved" bucket instead of forcing a
   match.

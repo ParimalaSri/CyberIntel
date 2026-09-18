@@ -10,16 +10,25 @@ Status legend: `todo` / `in-progress` / `done` / `blocked`
 - [x] Repo init, folder structure, `.gitignore`
 - [x] DuckDB installed
 - [x] PLANNING.md / ARCHITECTURE.md / BACKLOG.md drafted
-- [ ] Initial commit
+- [x] Initial commit
 
 ## Sprint 1 — Bronze & Silver Hosts
 **Epic:** As a data engineer, I want the raw 84.6GB JSONL converted into
 partitioned Parquet, so downstream queries don't re-parse JSON every time.
-- [ ] `pipeline/bronze/ingest.py` — JSONL -> Bronze Parquet (DuckDB `read_json` +
-      `COPY`, partitioned)
-- [ ] `pipeline/silver/hosts.py` — flatten nested structs into a typed
-      `silver_hosts` table (one row per ip:port:timestamp)
-- [ ] Row-count / null-rate sanity report
+- [x] `pipeline/bronze/manifest.py` — source-file identity manifest (Bronze is
+      the raw JSONL in place, not a Parquet mirror — see ARCHITECTURE.md)
+- [x] `pipeline/silver/hosts.py` — flatten nested structs into a typed
+      `silver_hosts` table (one row per ip:port:timestamp), explicit DuckDB
+      column projection, schema-validated on a 5000-row sample
+- [x] Full run against the 84.6GB source — `data/silver/hosts.parquet`,
+      368.7MB, **8,914,693 rows** (corrects the earlier ~4.2M estimate, which
+      was skewed by length-biased random sampling — see chat history)
+- [x] Row-count / null-rate sanity report — `pipeline/silver/sanity_check.py`.
+      Key coverage: `domains` populated on 73.7% of rows (entity-resolution
+      backbone), `org` on 99.8%, `vulns` on 2.8% (253,096 rows with >=1 CVE),
+      `product` on only 17.5% (most rows are bare port/banner scans with no
+      fingerprint). Matches the earlier 1%-sample percentages closely — only
+      the absolute row-count estimate was off, not the proportions.
 
 ## Sprint 2 — Entity Resolution & Silver Companies
 **Epic:** As a sales analyst, I want host rows grouped into companies, so the
