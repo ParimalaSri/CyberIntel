@@ -16,7 +16,7 @@ import duckdb
 
 sys.path.insert(0, os.path.dirname(__file__))
 from denylists import (  # noqa: E402
-    SHARED_INFRA_DOMAIN_SUFFIXES,
+    NON_TARGET_DOMAINS,
     HYPERSCALER_ORG_KEYWORDS,
     GENERIC_ISP_KEYWORDS,
 )
@@ -28,7 +28,7 @@ MAP_OUT_PATH = os.path.join(OUT_DIR, "host_company_map.parquet")
 
 _SQL_STR = lambda s: "'" + s.replace("'", "''") + "'"  # noqa: E731
 
-SHARED_INFRA_SQL_LIST = ", ".join(_SQL_STR(d) for d in sorted(SHARED_INFRA_DOMAIN_SUFFIXES))
+SHARED_INFRA_SQL_LIST = ", ".join(_SQL_STR(d) for d in sorted(NON_TARGET_DOMAINS))
 
 HYPERSCALER_LIKE_SQL = " OR ".join(
     f"coalesce(lower(org), '') LIKE '%{k}%' OR coalesce(lower(isp), '') LIKE '%{k}%'"

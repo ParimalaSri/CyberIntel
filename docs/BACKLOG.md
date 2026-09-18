@@ -64,9 +64,32 @@ reasons spelled out, so I know who to call and why.
       (composite key collision, NULL-unsafe join on `ip_str`) found via
       row-count QA. 31,261 companies have >=1 CVE; 5,398 have a risky open
       port; 58 show the `c2` tag (possibly-compromised bucket).
-- [ ] Company metadata table (size, ASN type, vertical guess, geo, reachability)
-- [ ] Scoring rules (fit_score, urgency_score, contact_score, band)
-- [ ] `gold_accounts` table + `why[]` explanation array per row
+- [x] Company metadata folded directly into scoring (host_count, reachability,
+      `database_tag_count`-based vertical bonus already lived in
+      `companies.parquet`/`security_signals.parquet` - a separate
+      intermediate table wasn't worth the extra pipeline stage). Note:
+      dropped the originally-planned `ics`/`medical` tag vertical bonus -
+      those tags are near-nonexistent in this dataset (single digits out of
+      8.9M rows) - swapped for `database_tag_count` instead, which we
+      actually have reliable coverage for.
+- [x] Scoring rules (`pipeline/gold/scoring.py`) — fit_score (reachability +
+      size + vertical + geography) x urgency_score (CVE/EPSS + EOL +
+      self-signed + risky ports, with `c2` overriding to max urgency) ->
+      contact_score, banded contact/review/skip/exclude.
+- [x] `data/gold/accounts.parquet` — 187,106 rows + `why[]` explanation array.
+      Band distribution: 202 contact (0.1%), 13,562 review (7.2%), 526
+      exclude (0.3%), 172,816 skip (92.4%).
+- [x] Found and fixed 3 issues via QA before accepting the output: (1)
+      Parquet has no native 128-bit int, so DuckDB's SUM() silently
+      downcast to DOUBLE, printing "16.0 hosts" in customer-facing why[]
+      text - fixed with explicit CAST to BIGINT; (2) `amazon.com` resolved
+      as a fake "contact"-band prospect - its real org was NTT America,
+      flagged `c2`, almost certainly a spoofed reverse-DNS PTR on
+      malicious infrastructure impersonating the brand (PTR records are
+      owned by the IP block owner, not the real domain owner, so they're
+      trivially spoofable) - added a brand-domain denylist; (3)
+      `'localhost.'` had aggregated 2,375 unrelated misconfigured hosts
+      into one fake company - added a reserved/placeholder domain denylist.
 
 ## Sprint 4 — LLM adjudication: skill, prompts, evals, tracing
 **Epic:** As a sales ops lead, I want the borderline-band AI decision to be
