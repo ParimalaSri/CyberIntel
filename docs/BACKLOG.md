@@ -57,7 +57,13 @@ account list is at the grain a salesperson thinks in.
 ## Sprint 3 — Scoring & Gold
 **Epic:** As an SDR, I want every company ranked by fit x urgency with the
 reasons spelled out, so I know who to call and why.
-- [ ] Security signals table (CVE, EOL, self-signed, risky ports, honeypot/c2)
+- [x] Security signals table (`pipeline/gold/security_signals.py`) — CVE
+      count/max CVSS/max EPSS/recency, EOL/self-signed/honeypot/c2 counts,
+      risky-open-port count, attack-surface size. 187,007 rows, matches
+      `companies.parquet` exactly after fixing two join-correctness bugs
+      (composite key collision, NULL-unsafe join on `ip_str`) found via
+      row-count QA. 31,261 companies have >=1 CVE; 5,398 have a risky open
+      port; 58 show the `c2` tag (possibly-compromised bucket).
 - [ ] Company metadata table (size, ASN type, vertical guess, geo, reachability)
 - [ ] Scoring rules (fit_score, urgency_score, contact_score, band)
 - [ ] `gold_accounts` table + `why[]` explanation array per row
