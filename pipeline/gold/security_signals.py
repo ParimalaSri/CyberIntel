@@ -42,6 +42,7 @@ per_host AS (
         resolution_tier,
         port,
         is_eol_product, is_self_signed, is_honeypot, is_c2,
+        is_iot, is_vpn, is_database_tag,
         coalesce(cardinality(vulns), 0) AS row_cve_count,
         CASE WHEN vulns IS NOT NULL AND cardinality(vulns) > 0
              THEN list_max(list_transform(map_values(vulns), x -> x.cvss))
@@ -59,15 +60,18 @@ SELECT
     company_key,
     resolution_tier,
     count(*) AS host_count,
-    sum(row_cve_count) AS cve_count,
+    CAST(coalesce(sum(row_cve_count), 0) AS BIGINT) AS cve_count,
     max(row_max_cvss) AS max_cvss,
     max(row_max_epss) AS max_epss,
     bool_or(row_has_recent_cve) AS has_recent_cve,
-    sum(is_eol_product::INT) AS eol_count,
-    sum(is_self_signed::INT) AS self_signed_count,
-    sum(is_honeypot::INT) AS honeypot_count,
-    sum(is_c2::INT) AS c2_count,
-    sum(is_risky_port::INT) AS risky_open_port_count,
+    CAST(coalesce(sum(is_eol_product::INT), 0) AS BIGINT) AS eol_count,
+    CAST(coalesce(sum(is_self_signed::INT), 0) AS BIGINT) AS self_signed_count,
+    CAST(coalesce(sum(is_honeypot::INT), 0) AS BIGINT) AS honeypot_count,
+    CAST(coalesce(sum(is_c2::INT), 0) AS BIGINT) AS c2_count,
+    CAST(coalesce(sum(is_iot::INT), 0) AS BIGINT) AS iot_count,
+    CAST(coalesce(sum(is_vpn::INT), 0) AS BIGINT) AS vpn_count,
+    CAST(coalesce(sum(is_database_tag::INT), 0) AS BIGINT) AS database_tag_count,
+    CAST(coalesce(sum(is_risky_port::INT), 0) AS BIGINT) AS risky_open_port_count,
     count(DISTINCT port) AS distinct_port_count
 FROM per_host
 GROUP BY company_key, resolution_tier

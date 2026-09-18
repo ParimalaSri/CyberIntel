@@ -36,6 +36,29 @@ SHARED_INFRA_DOMAIN_SUFFIXES = frozenset({
     "softlayer.com", "rackspace.com",
 })
 
+# Major/well-known brand domains. At the scale of a Fortune-500-class
+# company, a resolved domain is never a genuine sales lead - it's either
+# real infrastructure we should have caught above, or (as found via QA - an
+# "amazon.com" entry whose org was actually NTT America, flagged c2) a
+# spoofed reverse-DNS PTR on unrelated/malicious infrastructure impersonating
+# the brand. PTR records are controlled by whoever owns the IP block, not by
+# the real domain owner, so they're trivially spoofable.
+BRAND_DOMAINS = frozenset({
+    "amazon.com", "google.com", "microsoft.com", "apple.com", "facebook.com",
+    "meta.com", "netflix.com", "paypal.com", "ebay.com",
+})
+
+# Reserved/placeholder hostnames (RFC 2606, or just common device defaults)
+# that show up as `domains` values on misconfigured devices across many
+# unrelated networks. Found via QA: "localhost." alone had aggregated 2,375
+# unrelated hosts into one fake "company".
+RESERVED_PLACEHOLDER_DOMAINS = frozenset({
+    "localhost", "localhost.", "localdomain", "invalid",
+    "example.com", "example.net", "example.org", "local",
+})
+
+NON_TARGET_DOMAINS = SHARED_INFRA_DOMAIN_SUFFIXES | BRAND_DOMAINS | RESERVED_PLACEHOLDER_DOMAINS
+
 # Substring match (lowercased) against org/isp for the Tier-B fallback and
 # for rejecting Tier-A domain matches whose owning org is itself the infra
 # provider (e.g. an Incapsula IP whose PTR happens to resolve under a

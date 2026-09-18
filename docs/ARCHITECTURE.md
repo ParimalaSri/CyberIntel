@@ -15,37 +15,45 @@ SILVER HOSTS                    data/silver/hosts.parquet
   queryable columns. 8,914,693 rows (368.7MB Parquet, down from 84.6GB raw).
     |
     v
-ENTITY RESOLUTION               pipeline/entity_resolution/
-  host row -> company_domain. Heuristics: hostnames/domains field first,
-  then SSL cert subject org, then org/isp filtered against a hyperscaler/
-  CDN denylist (Google, Amazon, Cloudflare, Alibaba, Incapsula, Akamai, ...).
-  Unresolved rows go to an explicit "unresolved" bucket, not discarded silently.
+ENTITY RESOLUTION               pipeline/entity_resolution/resolve.py
+  host row -> company, 3 confidence tiers: domain (hostnames/domains field,
+  filtered against a hyperscaler/CDN/brand/placeholder denylist) -> org
+  (org name, filtered against the same + generic-ISP keywords) ->
+  unresolved (counted, not discarded). 187,106 resolved out of 8.9M hosts
+  (9.0% domain-tier, 13.1% org-tier, 78.0% unresolved - expected, dataset
+  skews heavily toward hyperscaler/CDN tenant IPs).
     |
     v
 SILVER COMPANIES                data/silver/companies.parquet
-  One row per resolved company (domain, name, country, host_count, asn_type).
+  One row per resolved (company_key, resolution_tier) pair - host_count,
+  country, ASN count, a likely_infra_or_proxy flag (org-tier, host_count
+  >= 500 - no real single business owns that many IPs with no domain).
     |
-    +----------------------+----------------------+
+    +----------------------+
     v                      v
-SECURITY SIGNALS      COMPANY METADATA
-(urgency inputs)       (fit inputs)
-  - CVE count/severity    - host/service count (size proxy)
-  - EOL product count     - non-hyperscaler ASN flag
-  - self-signed certs     - inferred vertical (product/tag mix)
-  - risky open ports      - geography
-  - honeypot/c2 flags     - reachability (has domain)
-    +----------------------+----------------------+
+SECURITY SIGNALS      (fit inputs folded directly into scoring.py -
+(urgency inputs)        no separate Company Metadata table; see trade-offs)
+  - CVE count/max CVSS/max EPSS/recency
+  - EOL, self-signed, honeypot, c2 counts
+  - risky open port count, attack-surface size
+  - database-tag count (vertical signal)
+    +----------------------+
                        v
                      GOLD                          data/gold/accounts.parquet
-       company, fit_score, urgency_score, contact_score, band, why[]
+       fit_score (reachability+size+vertical+geo) x urgency_score (CVE/EPSS+
+       EOL+self-signed+risky ports, c2 overrides to 100) -> contact_score,
+       why[] explanation array. 187,106 rows: 202 contact (>=85), 13,562
+       review (50-84), 526 exclude (honeypot/infra-proxy), 172,816 skip.
                        |
           +------------+------------+
           v                         v
-   score >= 85 -> auto-flag   50-84 -> LLM adjudication (skills/account-scoring)
+   contact band (>=85)     review band (50-84) -> LLM adjudication
+   auto-flagged                   (skills/account-scoring, Sprint 4)
           |                         |
           +------------+------------+
                        v
-      Hunter.io enrichment (contact_flag=true accounts only)
+      Hunter.io enrichment (contact band only, real calls, no mock fallback
+      - one-time batch run, quota-gated by band not by volume)
                        |
                        v
               API (FastAPI) + chatbot (tool-use over Gold + contact API)
