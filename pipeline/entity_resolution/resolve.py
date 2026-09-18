@@ -73,7 +73,7 @@ keyed AS (
     SELECT *,
         CASE resolution_tier
             WHEN 'domain' THEN lower(candidate_domain)
-            WHEN 'org' THEN lower(trim(org))
+            WHEN 'org' THEN regexp_replace(lower(trim(org)), '[\s.,]+$', '')
             ELSE NULL
         END AS company_key
     FROM tiered
@@ -108,23 +108,32 @@ def main():
         print(row)
 
     print(f"\nWriting {OUT_PATH} ...")
+    # Heuristic: no single legitimate business owns 500+ distinct IPs under
+    # one org-tier key (no domain to back it) - these are almost always
+    # proxy/hosting/VPN networks the keyword denylist didn't catch by name.
+    # Flagged, not dropped - kept for transparency, scoring should discount them.
     con.execute(f"""
         COPY (
-            SELECT
-                company_key,
-                resolution_tier,
-                count(*) AS host_count,
-                count(DISTINCT country_code) AS country_count,
-                mode(country_code) AS primary_country_code,
-                mode(country_name) AS primary_country_name,
-                count(DISTINCT asn) AS asn_count,
-                mode(org) AS primary_org,
-                mode(isp) AS primary_isp,
-                list(DISTINCT ip_str)[1:5] AS sample_ips,
-                list(DISTINCT hostnames[1])[1:5] AS sample_hostnames
-            FROM keyed
-            WHERE resolution_tier IN ('domain', 'org')
-            GROUP BY company_key, resolution_tier
+            WITH agg AS (
+                SELECT
+                    company_key,
+                    resolution_tier,
+                    count(*) AS host_count,
+                    count(DISTINCT country_code) AS country_count,
+                    mode(country_code) AS primary_country_code,
+                    mode(country_name) AS primary_country_name,
+                    count(DISTINCT asn) AS asn_count,
+                    mode(org) AS primary_org,
+                    mode(isp) AS primary_isp,
+                    list(DISTINCT ip_str)[1:5] AS sample_ips,
+                    list(DISTINCT hostnames[1])[1:5] AS sample_hostnames
+                FROM keyed
+                WHERE resolution_tier IN ('domain', 'org')
+                GROUP BY company_key, resolution_tier
+            )
+            SELECT *,
+                (resolution_tier = 'org' AND host_count >= 500) AS likely_infra_or_proxy
+            FROM agg
         ) TO '{OUT_PATH}' (FORMAT PARQUET, COMPRESSION ZSTD)
     """)
 
