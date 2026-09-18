@@ -24,6 +24,7 @@ from denylists import (  # noqa: E402
 HOSTS_PATH = r"D:\Cyber_DataSet\data\silver\hosts.parquet"
 OUT_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data", "silver")
 OUT_PATH = os.path.join(OUT_DIR, "companies.parquet")
+MAP_OUT_PATH = os.path.join(OUT_DIR, "host_company_map.parquet")
 
 _SQL_STR = lambda s: "'" + s.replace("'", "''") + "'"  # noqa: E731
 
@@ -139,6 +140,17 @@ def main():
 
     n_companies = con.execute(f"SELECT count(*) FROM read_parquet('{OUT_PATH}')").fetchone()[0]
     print(f"silver_companies row count: {n_companies:,}")
+
+    print(f"\nWriting {MAP_OUT_PATH} ...")
+    con.execute(f"""
+        COPY (
+            SELECT ip_str, port, company_key, resolution_tier
+            FROM keyed
+            WHERE resolution_tier IN ('domain', 'org')
+        ) TO '{MAP_OUT_PATH}' (FORMAT PARQUET, COMPRESSION ZSTD)
+    """)
+    n_map = con.execute(f"SELECT count(*) FROM read_parquet('{MAP_OUT_PATH}')").fetchone()[0]
+    print(f"host_company_map row count: {n_map:,}")
 
 
 if __name__ == "__main__":
