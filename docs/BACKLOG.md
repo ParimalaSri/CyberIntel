@@ -33,10 +33,19 @@ partitioned Parquet, so downstream queries don't re-parse JSON every time.
 ## Sprint 2 — Entity Resolution & Silver Companies
 **Epic:** As a sales analyst, I want host rows grouped into companies, so the
 account list is at the grain a salesperson thinks in.
-- [ ] Hyperscaler/CDN denylist (org/isp/ASN)
-- [ ] Resolution heuristic: hostnames/domains -> SSL cert org -> org/isp fallback
-- [ ] `silver_companies` table + explicit `unresolved` bucket with count
-- [ ] Resolution-yield report (% of host rows resolved)
+- [x] Hyperscaler/CDN/generic-ISP denylists — `pipeline/entity_resolution/denylists.py`
+- [x] Resolution heuristic (`pipeline/entity_resolution/resolve.py`): domain
+      tier (via `domains`, denylist + dynamic-PTR filter) -> org tier
+      (non-hyperscaler org name) -> unresolved. Fixed a NULL-propagation bug
+      where rows with a missing `isp` fell through to `unresolved` regardless
+      of `org` (SQL three-valued logic: `NULL LIKE x` is `NULL`, not `FALSE`,
+      and poisons the surrounding `OR`/`NOT` chain) — wrapped in `COALESCE`.
+- [x] `silver_companies` table (`data/silver/companies.parquet`) + explicit
+      `unresolved` bucket (not written to the table, reported as a count)
+- [x] Resolution-yield report: **187,188 resolved companies** out of 8.9M
+      host rows — 9.0% domain-tier, 13.0% org-tier, 78.0% unresolved
+      (expected and by design: precision over recall, and this dataset's
+      `org`/`isp` fields skew heavily toward hyperscaler/CDN tenant IPs)
 
 ## Sprint 3 — Scoring & Gold
 **Epic:** As an SDR, I want every company ranked by fit x urgency with the
