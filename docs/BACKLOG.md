@@ -1,0 +1,69 @@
+# Backlog
+
+Living document. Agile, sprint-based. Update status inline as work completes —
+this is the task tracker for the project (see [ARCHITECTURE.md](ARCHITECTURE.md)
+for the "how", [PLANNING.md](PLANNING.md) for the "why").
+
+Status legend: `todo` / `in-progress` / `done` / `blocked`
+
+## Sprint 0 — Project setup
+- [x] Repo init, folder structure, `.gitignore`
+- [x] DuckDB installed
+- [x] PLANNING.md / ARCHITECTURE.md / BACKLOG.md drafted
+- [ ] Initial commit
+
+## Sprint 1 — Bronze & Silver Hosts
+**Epic:** As a data engineer, I want the raw 84.6GB JSONL converted into
+partitioned Parquet, so downstream queries don't re-parse JSON every time.
+- [ ] `pipeline/bronze/ingest.py` — JSONL -> Bronze Parquet (DuckDB `read_json` +
+      `COPY`, partitioned)
+- [ ] `pipeline/silver/hosts.py` — flatten nested structs into a typed
+      `silver_hosts` table (one row per ip:port:timestamp)
+- [ ] Row-count / null-rate sanity report
+
+## Sprint 2 — Entity Resolution & Silver Companies
+**Epic:** As a sales analyst, I want host rows grouped into companies, so the
+account list is at the grain a salesperson thinks in.
+- [ ] Hyperscaler/CDN denylist (org/isp/ASN)
+- [ ] Resolution heuristic: hostnames/domains -> SSL cert org -> org/isp fallback
+- [ ] `silver_companies` table + explicit `unresolved` bucket with count
+- [ ] Resolution-yield report (% of host rows resolved)
+
+## Sprint 3 — Scoring & Gold
+**Epic:** As an SDR, I want every company ranked by fit x urgency with the
+reasons spelled out, so I know who to call and why.
+- [ ] Security signals table (CVE, EOL, self-signed, risky ports, honeypot/c2)
+- [ ] Company metadata table (size, ASN type, vertical guess, geo, reachability)
+- [ ] Scoring rules (fit_score, urgency_score, contact_score, band)
+- [ ] `gold_accounts` table + `why[]` explanation array per row
+
+## Sprint 4 — LLM adjudication: skill, prompts, evals, tracing
+**Epic:** As a sales ops lead, I want the borderline-band AI decision to be
+measured and versioned, not a black box.
+- [ ] `skills/account-scoring/SKILL.md`
+- [ ] `prompts/account_scoring/v1.md` (+ v2 once we iterate)
+- [ ] Tracing writer (schema in ARCHITECTURE.md) wired into every LLM call
+- [ ] `evals/account_scoring/labeled_set.jsonl` (20-30 hand-labeled examples)
+- [ ] `evals/run_eval.py` — one-command harness, precision/recall vs. previous
+      prompt version
+- [ ] `docs/COST_MODEL.md` — tokens x volume x frequency, model choice, cost
+      ceiling
+
+## Sprint 5 — Contact enrichment + API
+**Epic:** As an SDR, I want a name/email for flagged accounts, so I can
+actually send the email.
+- [ ] Hunter.io client, called only for `contact_flag=true` rows
+- [ ] FastAPI: `/accounts`, `/accounts/{id}`, `/accounts/{id}/contact`
+- [ ] Outreach-draft skill/prompt (optional stretch, same eval pattern)
+
+## Sprint 6 — Chatbot
+**Epic:** As an SDR, I want to ask "who should I contact today" in plain
+English and get an answer with a name attached.
+- [ ] Tool-calling loop over the Gold API + contact endpoint
+- [ ] Minimal chat UI
+
+## Sprint 7 — Ship
+- [ ] Deploy/host the app, get a public link
+- [ ] "How You Build" reflection (½-1 page)
+- [ ] Final pass on all docs
+- [ ] Optional Loom walkthrough
