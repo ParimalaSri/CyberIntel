@@ -5,14 +5,14 @@ Status: living document, updated every sprint (see [BACKLOG.md](BACKLOG.md)).
 ## Data pipeline (medallion)
 
 ```
-BRONZE                          data/bronze/*.parquet
-  raw JSONL -> Parquet, 1:1, no cleaning. Append-only landing zone.
+BRONZE                          data/bronze/manifest.json
+  Raw JSONL referenced in place (NOT mirrored into Parquet — see decision below).
     |
     v
 SILVER HOSTS                    data/silver/hosts.parquet
   Flattened, typed, one row per (ip, port, timestamp) observation.
   Nested structs (http, ssl, vulns, location, _shodan, tags) exploded into
-  queryable columns. ~4.2M rows.
+  queryable columns. 8,914,693 rows (368.7MB Parquet, down from 84.6GB raw).
     |
     v
 ENTITY RESOLUTION               pipeline/entity_resolution/
@@ -55,7 +55,7 @@ SECURITY SIGNALS      COMPANY METADATA
 
 | Decision | Rules | LLM | Why |
 |---|---|---|---|
-| Fit / urgency scoring | Yes | No | Deterministic, auditable, cheap at 4.2M-row scale — a salesperson must be able to see exactly which rows produced the number. |
+| Fit / urgency scoring | Yes | No | Deterministic, auditable, cheap at 8.9M-row scale — a salesperson must be able to see exactly which rows produced the number. |
 | Score >=85 / <50 routing | Yes | No | Clear-cut; an LLM call here would just be an expensive way to read a number off a threshold. |
 | 50-84 band adjudication | No | Yes | This is a genuine judgment call — do the specific combination of signals justify outreach even though the aggregate score is borderline. Only the band where judgment changes the outcome gets an LLM call. |
 | Company exposure summary (sales-readable) | No | Yes | Turning 10-30 raw signal rows into a 3-sentence brief a rep can use in an email is a language task, not a scoring task. |
@@ -73,6 +73,32 @@ SECURITY SIGNALS      COMPANY METADATA
 
 ## Key trade-offs
 
+- **Bronze is the raw JSONL file in place, not a Parquet mirror.** The source
+  schema has 60+ top-level struct columns, many device-specific (`hikvision`,
+  `mongodb`, `mikrotik_winbox`, `philips_hue`, ...) that are irrelevant to
+  scoring. Unifying all of them into one Parquet schema would cost a full
+  84.6GB rewrite (disk budget doesn't have headroom for a duplicate at that
+  size) for zero downstream benefit. Silver Hosts is produced directly from
+  the JSONL via `pipeline/silver/hosts.py`, using an explicit DuckDB column
+  projection covering only the fields entity resolution and scoring need.
+  `data/bronze/manifest.json` records the source file's identity
+  (size/mtime/row-count estimate) so the pipeline is still reproducible and
+  auditable without the duplicate copy.
+- **SSL certificate subject/issuer org is not parsed.** The `ssl` field in
+  this dataset only carries the raw PEM chain, `chain_sha256`, and `jarm` —
+  not a pre-parsed subject/issuer. Decoding x509 to pull an org name would
+  require a certificate parser per record and only covers the ~11% of rows
+  that have `ssl` at all. Deferred: entity resolution relies on
+  `hostnames`/`domains` (73.6% coverage) as the primary signal instead. The
+  `self-signed` tag (already provided) covers the security-hygiene signal
+  this would have added, so no scoring value is lost.
+- **EPSS, not just CVSS, drives urgency.** Each CVE in `vulns` carries an
+  `epss` score (probability of exploitation in the wild) and `ranking_epss`
+  (percentile) alongside CVSS severity. A high-CVSS, low-EPSS CVE is a
+  theoretical risk; a mid-CVSS, high-EPSS CVE is being actively exploited
+  right now — the latter is the more defensible "why now" for outreach, so
+  urgency scoring weights EPSS explicitly rather than treating CVSS as the
+  whole signal (see [BACKLOG.md](BACKLOG.md) Sprint 3).
 - **Entity resolution is heuristic, not ground truth.** We don't have a
   canonical company registry. Precision is favored over recall — better to
   under-resolve (leave a host unresolved) than to merge two unrelated

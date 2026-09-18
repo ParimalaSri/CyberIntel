@@ -11,6 +11,6 @@ Raw dataset is not committed (84.6GB, gitignored). To reproduce locally:
 ## Format
 
 JSON Lines, one record per exposed service/banner observation
-(`ip`, `port`, `timestamp` grain), ~4.2M rows. See
+(`ip`, `port`, `timestamp` grain), 8,914,693 rows. See
 [ARCHITECTURE.md](ARCHITECTURE.md) for the pipeline that turns this into a
 company-level, scored account list.
