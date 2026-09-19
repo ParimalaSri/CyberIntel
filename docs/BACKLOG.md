@@ -162,7 +162,13 @@ measured and versioned, not a black box.
       construction. 3 few-shot examples anchor the output format and the
       contact-vs-skip distinction at similar scores. Changelog comment at
       the top for version history.
-- [ ] Tracing writer (schema in ARCHITECTURE.md) wired into every LLM call
+- [x] Tracing writer (`llm/tracing.py`) — `log_trace()` appends one JSONL
+      record per call to `evals/results/traces.jsonl` (schema matches
+      ARCHITECTURE.md), `estimate_cost()` from a per-model $/M-token table
+      (flagged as approximate, needs verifying against Anthropic's current
+      pricing page before real budgeting), `read_traces()` for the eval
+      harness to consume. Smoke-tested, not yet wired into a real call -
+      that happens when `evals/run_eval.py` makes its first actual API call.
 - [ ] `evals/run_eval.py` — one-command harness, precision/recall vs. previous
       prompt version
 - [ ] `docs/COST_MODEL.md` — tokens x volume x frequency, model choice, cost
