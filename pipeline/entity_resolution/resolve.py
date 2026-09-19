@@ -39,9 +39,16 @@ GENERIC_ISP_LIKE_SQL = " OR ".join(
     f"coalesce(lower(org), '') LIKE '%{k}%'" for k in sorted(GENERIC_ISP_KEYWORDS)
 )
 
-# ISP-assigned dynamic/PTR hostname pattern, e.g. "77-163-107-27.fixed.kpn.net"
-# or "ip-192-168-1-1.customer...": the leading label is the IP itself, dashed.
+# ISP-assigned dynamic/PTR hostname patterns - the leading label(s) encode
+# the IP itself, or an explicit ISP-customer marker appears in the hostname.
+# Dash-separated: "77-163-107-27.fixed.kpn.net", "ip-192-168-1-1.customer..."
 DYNAMIC_PTR_REGEX = r'^(ip-)?[0-9]+(-[0-9]+){2,}'
+# Dot-separated: "179.202.41.212.static.wline.lns.sme.cust.swisscom.ch"
+# (found via QA: swisscom.ch aggregated 437 hosts that were all its own
+# broadband customers' static IPs, not Swisscom itself)
+DOTTED_IP_PREFIX_REGEX = r'^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.'
+# Explicit ISP-customer naming marker anywhere in the hostname
+ISP_CUSTOMER_MARKER_REGEX = r'\.(static|dynamic|cust|customer|pool|dsl|dial|dhcp)\.'
 
 SQL = f"""
 WITH base AS (
@@ -49,10 +56,16 @@ WITH base AS (
         ip_str, port, ts, org, isp, asn, country_code, country_name, city,
         hostnames, domains,
         CASE WHEN len(domains) > 0 THEN
-            list_filter(domains, d -> lower(d) NOT IN ({SHARED_INFRA_SQL_LIST}))[1]
+            list_filter(domains, d ->
+                lower(d) NOT IN ({SHARED_INFRA_SQL_LIST})
+                AND lower(d) NOT LIKE '%.arpa'
+                AND regexp_replace(lower(d), '\.$', '') LIKE '%.%'
+            )[1]
         ELSE NULL END AS candidate_domain,
         CASE WHEN len(hostnames) > 0
             THEN regexp_matches(hostnames[1], '{DYNAMIC_PTR_REGEX}')
+              OR regexp_matches(hostnames[1], '{DOTTED_IP_PREFIX_REGEX}')
+              OR regexp_matches(lower(hostnames[1]), '{ISP_CUSTOMER_MARKER_REGEX}')
             ELSE false
         END AS is_dynamic_ptr,
         ({HYPERSCALER_LIKE_SQL}) AS is_hyperscaler_org,
@@ -109,10 +122,12 @@ def main():
         print(row)
 
     print(f"\nWriting {OUT_PATH} ...")
-    # Heuristic: no single legitimate business owns 500+ distinct IPs under
-    # one org-tier key (no domain to back it) - these are almost always
-    # proxy/hosting/VPN networks the keyword denylist didn't catch by name.
-    # Flagged, not dropped - kept for transparency, scoring should discount them.
+    # Heuristic: no single legitimate business owns 500+ distinct IPs, whether
+    # under an org-tier key (no domain) or a domain-tier key (e.g. comcast.net,
+    # spectrum.com - residential ISP domains that pass the hyperscaler-org
+    # check since their org name doesn't match any denylist keyword). These
+    # are almost always proxy/hosting/ISP networks the keyword denylist
+    # didn't catch by name. Flagged, not dropped - scoring should discount them.
     con.execute(f"""
         COPY (
             WITH agg AS (
@@ -133,7 +148,7 @@ def main():
                 GROUP BY company_key, resolution_tier
             )
             SELECT *,
-                (resolution_tier = 'org' AND host_count >= 500) AS likely_infra_or_proxy
+                (host_count >= 500) AS likely_infra_or_proxy
             FROM agg
         ) TO '{OUT_PATH}' (FORMAT PARQUET, COMPRESSION ZSTD)
     """)
