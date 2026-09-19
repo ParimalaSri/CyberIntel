@@ -1,0 +1,280 @@
+<title>Issues & Resolutions</title>
+<style>
+  :root {
+    --bg: #f3f4f6; --surface: #ffffff; --surface-2: #eaecf0; --border: #dde1e7;
+    --ink: #14171f; --ink-soft: #565f6f; --ink-faint: #868f9e;
+    --found: #b5730f; --found-bg: #fbf1e0; --found-border: #edcf9c;
+    --resolved: #1f8f4e; --resolved-bg: #e6f6ec; --resolved-border: #a9dfbd;
+    --stage-1: #6a4fb5; --stage-2: #b5730f; --stage-3: #1f6fb5; --stage-4: #b5304f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1319; --surface: #171c24; --surface-2: #1e2430; --border: #2c3441;
+      --ink: #e9ecf2; --ink-soft: #aab2c0; --ink-faint: #798298;
+      --found: #e0a63f; --found-bg: #2e2410; --found-border: #5c4a1f;
+      --resolved: #4fd082; --resolved-bg: #10291a; --resolved-border: #235939;
+      --stage-1: #a68cf0; --stage-2: #e0a63f; --stage-3: #6fa8e0; --stage-4: #e07a94;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1319; --surface: #171c24; --surface-2: #1e2430; --border: #2c3441;
+    --ink: #e9ecf2; --ink-soft: #aab2c0; --ink-faint: #798298;
+    --found: #e0a63f; --found-bg: #2e2410; --found-border: #5c4a1f;
+    --resolved: #4fd082; --resolved-bg: #10291a; --resolved-border: #235939;
+    --stage-1: #a68cf0; --stage-2: #e0a63f; --stage-3: #6fa8e0; --stage-4: #e07a94;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: "IBM Plex Sans", -apple-system, Segoe UI, sans-serif; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 16px 72px; }
+
+  h1, h2, .display { font-family: "Fraunces", Georgia, serif; }
+
+  /* Hero */
+  .hero { padding: 48px 0 28px; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+  .eyebrow { font-family: "IBM Plex Mono", monospace; font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 10px; }
+  h1 { font-size: clamp(28px, 5.5vw, 42px); font-weight: 600; line-height: 1.08; letter-spacing: -0.01em; margin: 0 0 14px; text-wrap: balance; }
+  .lede { font-size: 15.5px; color: var(--ink-soft); line-height: 1.65; max-width: 620px; margin: 0 0 26px; }
+  .lede b { color: var(--ink); font-weight: 600; }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  @media (max-width: 620px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+  .stat { background: var(--surface); padding: 16px 14px; }
+  .stat .n { font-family: "Fraunces", serif; font-size: 28px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+  .stat .l { font-size: 11px; color: var(--ink-faint); margin-top: 6px; text-transform: uppercase; letter-spacing: .04em; }
+
+  /* Nav */
+  nav.stages { position: sticky; top: 0; background: var(--bg); padding: 14px 0; display: flex; gap: 8px; flex-wrap: wrap; z-index: 5; border-bottom: 1px solid var(--border); margin-bottom: 28px; }
+  nav.stages a { font-size: 12px; font-family: "IBM Plex Mono", monospace; text-decoration: none; color: var(--ink-soft); border: 1px solid var(--border); border-radius: 100px; padding: 5px 12px; white-space: nowrap; }
+  nav.stages a:hover { border-color: var(--stage-color, var(--ink-soft)); color: var(--ink); }
+
+  /* Stage section */
+  .stage-block { margin-bottom: 44px; scroll-margin-top: 64px; }
+  .stage-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 16px; }
+  .stage-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--stage-color); flex: none; }
+  .stage-head h2 { font-size: 20px; font-weight: 600; margin: 0; }
+  .stage-head .count { font-size: 12px; color: var(--ink-faint); font-family: "IBM Plex Mono", monospace; }
+
+  /* Issue card */
+  details.issue { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--stage-color); border-radius: 9px; margin-bottom: 10px; overflow: hidden; }
+  details.issue summary { list-style: none; cursor: pointer; padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+  details.issue summary::-webkit-details-marker { display: none; }
+  details.issue summary .num { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-faint); flex: none; width: 20px; }
+  details.issue summary .title { font-weight: 600; font-size: 14.5px; flex: 1; }
+  details.issue summary .chev { color: var(--ink-faint); transition: transform .15s ease; flex: none; }
+  details.issue[open] summary .chev { transform: rotate(90deg); }
+
+  .issue-body { padding: 0 16px 18px 48px; }
+  .block { margin-bottom: 12px; }
+  .block:last-child { margin-bottom: 0; }
+  .block .tag { display: inline-flex; align-items: center; gap: 5px; font-family: "IBM Plex Mono", monospace; font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; padding: 2px 8px; border-radius: 4px; margin-bottom: 6px; }
+  .tag.found { color: var(--found); background: var(--found-bg); border: 1px solid var(--found-border); }
+  .tag.resolved { color: var(--resolved); background: var(--resolved-bg); border: 1px solid var(--resolved-border); }
+  .tag.neutral { color: var(--ink-faint); background: var(--surface-2); border: 1px solid var(--border); }
+  .block p { font-size: 13px; color: var(--ink-soft); line-height: 1.6; margin: 0; }
+  .block code { font-family: "IBM Plex Mono", monospace; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; font-size: 12px; color: var(--ink); }
+  .evidence { background: var(--surface-2); border-radius: 6px; padding: 8px 12px; font-family: "IBM Plex Mono", monospace; font-size: 11.5px; color: var(--ink-soft); margin: 6px 0; white-space: pre-wrap; }
+
+  /* Lessons */
+  .lessons-head { text-align: center; margin: 56px 0 24px; }
+  .lessons-head .eyebrow { justify-content: center; display: flex; }
+  .lessons-head h2 { font-size: 26px; margin: 0; }
+  .lessons { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 620px) { .lessons { grid-template-columns: 1fr; } }
+  .lesson { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
+  .lesson .num { font-family: "Fraunces", serif; font-size: 22px; color: var(--found); margin-bottom: 8px; }
+  .lesson h3 { font-size: 14.5px; margin: 0 0 8px; }
+  .lesson p { font-size: 12.5px; color: var(--ink-soft); line-height: 1.6; margin: 0; }
+
+  footer { text-align: center; color: var(--ink-faint); font-size: 12px; margin-top: 48px; }
+</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow">Engineering log — Cyber Sales Intelligence Platform</div>
+    <h1>Issues &amp; Resolutions</h1>
+    <p class="lede">Every data-quality and correctness bug found while building the pipeline, in the order it was found &mdash; not a cleaned-up retrospective. <b>Real internet-scan data surfaces bugs a schema can't predict:</b> SQL's NULL semantics, Parquet's type system, and the dataset's own messiness each produced a genuine, found-not-hypothetical failure.</p>
+    <div class="stats">
+      <div class="stat"><div class="n">12</div><div class="l">Issues found &amp; fixed</div></div>
+      <div class="stat"><div class="n">4</div><div class="l">Pipeline stages touched</div></div>
+      <div class="stat"><div class="n">3</div><div class="l">NULL-semantics bugs</div></div>
+      <div class="stat"><div class="n">189,257</div><div class="l">Final resolved companies</div></div>
+    </div>
+  </div>
+
+  <nav class="stages">
+    <a href="#ingestion" style="--stage-color:var(--stage-1)">Ingestion (1)</a>
+    <a href="#resolution" style="--stage-color:var(--stage-2)">Entity Resolution (5)</a>
+    <a href="#pipeline" style="--stage-color:var(--stage-3)">Pipeline Correctness (2)</a>
+    <a href="#gold" style="--stage-color:var(--stage-4)">Gold / Denylists (4)</a>
+  </nav>
+
+  <!-- STAGE: INGESTION -->
+  <div class="stage-block" id="ingestion" style="--stage-color:var(--stage-1)">
+    <div class="stage-head"><span class="stage-dot"></span><h2>Ingestion</h2><span class="count">1 issue</span></div>
+
+    <details class="issue" open>
+      <summary><span class="num">01</span><span class="title">A record bigger than the parser's default limit</span><span class="chev">&#8250;</span></summary>
+      <div class="issue-body">
+        <div class="block"><span class="tag found">Found</span><p>The first full run of the ingestion script failed outright: <code>"maximum_object_size" of 16777216 bytes exceeded</code>.</p></div>
+        <div class="block"><span class="tag neutral">Root cause</span><p>One record (likely a large embedded screenshot/HTML blob) is ~25MB &mdash; DuckDB's JSON parser defaults to a 16MB per-object cap.</p></div>
+        <div class="block"><span class="tag resolved">Fix</span><p>Raised <code>maximum_object_size</code> to 128MB in the ingestion call.</p></div>
+        <div class="block"><span class="tag neutral">Verified</span><p>Full 84.6GB scan completes; 8,914,693 rows written, matching the raw line count exactly.</p></div>
+      </div>
+    </details>
+  </div>
+
+  <!-- STAGE: ENTITY RESOLUTION -->
+  <div class="stage-block" id="resolution" style="--stage-color:var(--stage-2)">
+    <div class="stage-head"><span class="stage-dot"></span><h2>Entity Resolution</h2><span class="count">5 issues</span></div>
+
+    <details class="issue">
+      <summary><span class="num">02</span><span class="title">NULL silently mis-buckets rows</span><span class="chev">&#8250;</span></summary>
+      <div class="issue-body">
+        <div class="block"><span class="tag found">Found</span><p>QA-sampling the "unresolved" bucket surfaced a real company sitting where only cloud/CDN tenant IPs should be:</p><div class="evidence">('ACEVILLE PTE.LTD.', None, 84972)</div></div>
+        <div class="block"><span class="tag neutral">Root cause</span><p>The hyperscaler check was <code>lower(isp) LIKE '%google%' OR ...</code>. In SQL, <code>NULL LIKE anything</code> is <code>NULL</code>, not <code>false</code> &mdash; it poisons the surrounding OR/NOT chain. Any row with a missing <code>isp</code> (8.6% of rows) fell through to unresolved regardless of what <code>org</code> said.</p></div>
+        <div class="block"><span class="tag resolved">Fix</span><p>Wrapped in <code>COALESCE(lower(isp), '')</code> so a missing value compares as empty string, not unknown.</p></div>
+        <div class="block"><span class="tag neutral">Verified</span><p>Unresolved dropped from 80.0% to 78.0% of rows; ACEVILLE now correctly resolves.</p></div>
+      </div>
+    </details>
+
+    <details class="issue">
+      <summary><span class="num">03</span><span class="title">Punctuation splits one company into two</span><span class="chev">&#8250;</span></summary>
+      <div class="issue-body">
+        <div class="block"><span class="tag found">Found</span><p>Two "different" top companies, same business:</p><div class="evidence">('meteverse limited',  78,292)
+('meteverse limited.', 62,702)</div></div>
+        <div class="block"><span class="tag neutral">Root cause</span><p>The key was <code>lower(trim(org))</code> &mdash; trims whitespace, not trailing punctuation.</p></div>
+        <div class="block"><span class="tag resolved">Fix</span><p><code>regexp_replace(lower(trim(org)), '[\s.,]+$', '')</code></p></div>
+        <div class="block"><span class="tag neutral">Verified</span><p>Merged into one row, 140,994 hosts &mdash; exactly 78,292 + 62,702.</p></div>
+      </div>
+    </details>
+
+    <details class="issue">
+      <summary><span class="num">04</span><span class="title">Proxy/hosting networks mistaken for one company</span><span class="chev">&#8250;</span></summary>
+      <div class="issue-body">
+        <div class="block"><span class="tag found">Found</span><p>Top "companies" no real business could be: <code>ACEVILLE PTE.LTD.</code> (130,066 hosts, 3 ASNs), <code>Internet Rimon</code> (92,769 hosts).</p></div>
+        <div class="block"><span class="tag neutral">Root cause</span><p>Proxy/hosting networks whose names don't contain any denylist keyword &mdash; a keyword denylist is incomplete by construction.</p></div>
+        <div class="block"><span class="tag resolved">Fix</span><p>Flagged (not dropped) rows with <code>host_count &ge; 500</code> as <code>likely_infra_or_proxy</code> &mdash; kept for transparency, discounted in scoring.</p></div>
+        <div class="block"><span class="tag neutral">Verified</span><p>237 flagged companies (0.13% of resolved companies) held 780,194 hosts &mdash; ~40% of all resolved volume. Would have dominated any un-flagged signal.</p></div>
+      </div>
+    </details>
+
+    <details class="issue">
+      <summary><span class="num">11</span><span class="title">ISPs' own customers mistaken for the ISP</span><span class="chev">&#8250;</span></summary>
+      <div class="issue-body">
+        <div class="block"><span class="tag found">Found</span><p><code>comcast.net</code> (2,803 hosts), <code>spectrum.com</code> (12,821 hosts) sitting in the sample, some scoring a perfect 100. <code>swisscom.ch</code> (437 hosts) had zero other reason to be excluded &mdash; its hostnames read:</p><div class="evidence">179.202.41.212.static.wline.lns.sme.cust.swisscom.ch</div><p style="margin-top:6px;">Swisscom's own naming convention for its broadband customers' static IPs.</p></div>
+        <div class="block"><span class="tag neutral">Root cause</span><p>Issue #4's <code>likely_infra_or_proxy</code> flag only applied to org-tier companies; domain-tier had no equivalent check. The dynamic-PTR detector also only caught dash-separated IPs (<code>77-163-107-27.fixed...</code>), missing this dot-separated pattern entirely.</p></div>
+        <div class="block"><span class="tag resolved">Fix</span><p>Extended the infra flag to domain-tier (<code>host_count &ge; 500</code>, any tier). Generalized the PTR detector to also match dotted-IP prefixes and explicit markers (<code>static</code>, <code>dynamic</code>, <code>cust</code>, <code>pool</code>, <code>dsl</code>, <code>dial</code>, <code>dhcp</code>).</p></div>
+      </div>
+    </details>
+
+    <details class="issue">
+      <summary><span class="num">12</span><span class="title">A trailing dot defeated the domain-plausibility check</span><span class="chev">&#8250;</span></summary>
+      <div class="issue-body">
+        <div class="block"><span class="tag found">Found</span><p><code>'vds.'</code> (81 hosts, a hosting provider's internal VPS-naming suffix, not a real domain) still appeared <em>after</em> adding a "must contain a dot" check.</p></div>
+        <div class="block"><span class="tag neutral">Root cause</span><p><code>"vds."</code> technically contains a dot &mdash; at the very end. The naive <code>LIKE '%.%'</code> check didn't distinguish a real SLD.TLD structure from a bare label with a stray trailing period.</p></div>
+        <div class="block"><span class="tag resolved">Fix</span><p><code>regexp_replace(lower(d), '\.$', '')</code> to strip a trailing dot <em>before</em> checking for a real remaining one.</p></div>
+        <div class="block"><span class="tag neutral">Verified</span><p>Both <code>swisscom.ch</code> and <code>vds.</code> gone from results; final count 189,257 resolved companies.</p></div>
+      </div>
+    </details>
+  </div>
+
+  <!-- STAGE: PIPELINE CORRECTNESS -->
+  <div class="stage-block" id="pipeline" style="--stage-color:var(--stage-3)">
+    <div class="stage-head"><span class="stage-dot"></span><h2>Pipeline Correctness</h2><span class="count">2 issues</span></div>
+
+    <details class="issue">
+      <summary><span class="num">05</span><span class="title">A row-count mismatch traced to two compounding bugs</span><span class="chev">&#8250;</span></summary>
+      <div class="issue-body">
+        <div class="block"><span class="tag found">Found</span><p>Security Signals produced 186,435 rows against Silver Companies' 187,007. Insisting on an exact match, not "close enough," surfaced two separate bugs.</p></div>
+        <div class="block"><span class="tag neutral">Root cause (a)</span><p><b>Key collision:</b> joining on <code>company_key</code> alone let an unrelated domain-tier and org-tier key collide if the strings happened to match.</p></div>
+        <div class="block"><span class="tag neutral">Root cause (b)</span><p><b>NULL-unsafe join:</b> <code>ip_str</code> is NULL on 1.2% of rows; SQL's <code>NULL = NULL</code> is unknown, not true &mdash; those rows never joined, and any company whose only hosts had a NULL <code>ip_str</code> vanished entirely.</p></div>
+        <div class="block"><span class="tag resolved">Fix</span><p>(a) Composite key <code>(company_key, resolution_tier)</code> everywhere downstream. (b) Join on <code>(ip_str, port, ts)</code> using <code>IS NOT DISTINCT FROM</code> for NULL-safe equality.</p></div>
+        <div class="block"><span class="tag neutral">Verified</span><p>Counts now match exactly: 187,007 = 187,007.</p></div>
+      </div>
+    </details>
+
+    <details class="issue">
+      <summary><span class="num">06</span><span class="title">Parquet has no 128-bit integer &mdash; numbers became floats</span><span class="chev">&#8250;</span></summary>
+      <div class="issue-body">
+        <div class="block"><span class="tag found">Found</span><p>Customer-facing text read <em>"16.0 host(s) running end-of-life software"</em> instead of "16"; a sanity query showed counts that should never be NULL:</p><div class="evidence">('hurricane electric', ..., None, None, 0.0)</div></div>
+        <div class="block"><span class="tag neutral">Root cause (NULL)</span><p><code>is_eol_product::INT</code> is itself NULL whenever a host's <code>tags</code> field is NULL (33.1% of rows) &mdash; <code>list_contains(NULL, 'x')</code> returns NULL, and <code>SUM()</code> of an all-NULL group returns NULL, not 0.</p></div>
+        <div class="block"><span class="tag neutral">Root cause (float)</span><p>DuckDB's <code>SUM()</code> computes internally as HUGEINT (128-bit). Parquet has no native 128-bit integer type, so it silently downcasts to DOUBLE on write.</p></div>
+        <div class="block"><span class="tag resolved">Fix</span><p><code>CAST(coalesce(sum(...), 0) AS BIGINT)</code> on every count aggregate.</p></div>
+        <div class="block"><span class="tag neutral">Verified</span><p>Clean integers throughout &mdash; "16 host(s)", not "16.0 host(s)".</p></div>
+      </div>
+    </details>
+  </div>
+
+  <!-- STAGE: GOLD / DENYLISTS -->
+  <div class="stage-block" id="gold" style="--stage-color:var(--stage-4)">
+    <div class="stage-head"><span class="stage-dot"></span><h2>Gold Layer &amp; Denylists</h2><span class="count">4 issues</span></div>
+
+    <details class="issue">
+      <summary><span class="num">07</span><span class="title">A "contact"-band prospect that was a spoofed brand</span><span class="chev">&#8250;</span></summary>
+      <div class="issue-body">
+        <div class="block"><span class="tag found">Found</span><p><code>amazon.com</code> sitting in the contact band, score 93.</p></div>
+        <div class="block"><span class="tag neutral">Root cause</span><p>Its resolved org was <code>NTT America, Inc.</code>, not Amazon, and the host was flagged <code>c2</code> (possible command-and-control) &mdash; almost certainly a spoofed reverse-DNS PTR impersonating the brand. PTR records are controlled by the IP block's owner, not the real domain's registrant, so they're trivially fakeable.</p></div>
+        <div class="block"><span class="tag resolved">Fix</span><p>Added a brand-domain denylist (amazon.com, google.com, microsoft.com...) &mdash; at that scale, a resolved domain is never a genuine lead, it's infrastructure already caught elsewhere, or impersonation.</p></div>
+      </div>
+    </details>
+
+    <details class="issue">
+      <summary><span class="num">08</span><span class="title">A placeholder hostname aggregated thousands of unrelated hosts</span><span class="chev">&#8250;</span></summary>
+      <div class="issue-body">
+        <div class="block"><span class="tag found">Found</span><p><code>'localhost.'</code> had aggregated 2,375 hosts into one fake company, sample hostnames including <code>undefined.hostname.localhost</code>.</p></div>
+        <div class="block"><span class="tag neutral">Root cause</span><p>Generic placeholder hostnames from misconfigured devices across many unrelated networks all reduce to the same reserved domain string.</p></div>
+        <div class="block"><span class="tag resolved">Fix</span><p>Added a reserved/placeholder domain denylist (<code>localhost</code>, <code>localdomain</code>, <code>invalid</code>, <code>example.com/net/org</code>).</p></div>
+      </div>
+    </details>
+
+    <details class="issue">
+      <summary><span class="num">09</span><span class="title">A reserved DNS zone treated as a company</span><span class="chev">&#8250;</span></summary>
+      <div class="issue-body">
+        <div class="block"><span class="tag found">Found</span><p><code>37.in-addr.arpa</code> sitting in the contact band with a perfect score.</p></div>
+        <div class="block"><span class="tag neutral">Root cause</span><p><code>.in-addr.arpa</code> is an IANA-reserved reverse-DNS zone, not a real registrable domain &mdash; same bug class as #8, a different reserved namespace.</p></div>
+        <div class="block"><span class="tag resolved">Fix</span><p>Added a suffix check: <code>lower(d) NOT LIKE '%.arpa'</code>.</p></div>
+      </div>
+    </details>
+
+    <details class="issue">
+      <summary><span class="num">10</span><span class="title">The screenshot field turned out to be free, high-value signal</span><span class="chev">&#8250;</span></summary>
+      <div class="issue-body">
+        <div class="block"><span class="tag neutral">Not a bug &mdash; an opportunity found on review</span><p>A cross-check of every field dropped during ingestion found that Shodan pre-computes OCR text and scene labels on exposed RDP/VNC screenshots. No vision model needed &mdash; the analysis was already sitting in the record, unused.</p></div>
+        <div class="block"><span class="tag resolved">Added</span><p>Wired <code>screenshot.labels</code>/<code>screenshot.text</code> into the schema and into scoring as top-priority evidence.</p></div>
+        <div class="block"><span class="tag neutral">Result</span><p>Real examples now surface actual employee usernames OCR'd off exposed Windows RDP login screens &mdash; contact band grew from 202 to 242 accounts on this addition alone.</p></div>
+      </div>
+    </details>
+  </div>
+
+  <div class="lessons-head">
+    <div class="eyebrow">What generalized</div>
+    <h2 class="display">Four lessons across twelve bugs</h2>
+  </div>
+  <div class="lessons">
+    <div class="lesson">
+      <div class="num">01</div>
+      <h3>NULL is not false, three separate times</h3>
+      <p>Issues #2, #5b, and #6 are the same root cause in three different parts of the pipeline. Any <code>LIKE</code>, <code>SUM</code>, or <code>=</code> touching a nullable column needs an explicit NULL-safety check by default now, not as an afterthought.</p>
+    </div>
+    <div class="lesson">
+      <div class="num">02</div>
+      <h3>"Close enough" hides real bugs</h3>
+      <p>Issue #5 was only caught by refusing to accept 186,435 vs. 187,007 as noise. A summary statistic is a claim to verify, not a number to glance at.</p>
+    </div>
+    <div class="lesson">
+      <div class="num">03</div>
+      <h3>A denylist is a floor, not a ceiling</h3>
+      <p>Every brand/placeholder/ISP fix (#7, #8, #9, #11) is the same shape: a keyword list will always miss cases outside what's been looked at so far. The fix is cheap, generalizable checks plus honestly documenting the residual noise.</p>
+    </div>
+    <div class="lesson">
+      <div class="num">04</div>
+      <h3>Precision over recall, consistently</h3>
+      <p>Every fix here trades some correctly-resolved companies for fewer incorrectly-resolved ones. That's a deliberate, stated architectural trade-off &mdash; not an accident of running out of time.</p>
+    </div>
+  </div>
+
+  <footer>Full detail and commit history in ARCHITECTURE.md and BACKLOG.md</footer>
+</div>

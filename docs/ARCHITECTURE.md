@@ -2,12 +2,16 @@
 
 Status: living document, updated every sprint (see [BACKLOG.md](BACKLOG.md)).
 
-Two visual companions to this doc (open in a browser):
+Visual companions to this doc (open in a browser):
 - [pipeline-flow.html](pipeline-flow.html) — the diagram below, rendered
 - [pipeline-notebook.html](pipeline-notebook.html) — a notebook-style walkthrough
   of every stage: sample input, what got dropped and why, the result, every
   data quality issue found with root cause and fix, and a re-sample after
   the fix
+- [issues-and-resolutions.html](issues-and-resolutions.html) — presentation
+  version of [ISSUES_AND_RESOLUTIONS.md](ISSUES_AND_RESOLUTIONS.md): all 12
+  issues found and fixed, grouped by pipeline stage, with the 4 lessons that
+  generalized across them
 
 ## Data pipeline (medallion)
 
