@@ -1,0 +1,189 @@
+<title>Pipeline Flow</title>
+<style>
+  :root {
+    --bg: #f2f4f7;
+    --surface: #ffffff;
+    --surface-2: #eaeef3;
+    --border: #dde2e9;
+    --ink: #131c2e;
+    --ink-soft: #55617a;
+    --ink-faint: #8792a8;
+    --accent: #0f6e6a;
+    --band-contact: #157f3c; --band-contact-bg: #e5f6ea;
+    --band-review: #b5750a;  --band-review-bg: #fdf1de;
+    --band-skip: #5b6478;    --band-skip-bg: #eceef2;
+    --band-exclude: #b42323; --band-exclude-bg: #fbe9e9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e1420; --surface: #151d2c; --surface-2: #1b2536; --border: #2a3549;
+      --ink: #e8ecf3; --ink-soft: #a7b1c6; --ink-faint: #7d879e; --accent: #4fd3cb;
+      --band-contact: #4ecb7f; --band-contact-bg: #163524;
+      --band-review: #e0a63f;  --band-review-bg: #3a2c11;
+      --band-skip: #9aa4ba;    --band-skip-bg: #212b3d;
+      --band-exclude: #f1746b; --band-exclude-bg: #3a1a1a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e1420; --surface: #151d2c; --surface-2: #1b2536; --border: #2a3549;
+    --ink: #e8ecf3; --ink-soft: #a7b1c6; --ink-faint: #7d879e; --accent: #4fd3cb;
+    --band-contact: #4ecb7f; --band-contact-bg: #163524;
+    --band-review: #e0a63f;  --band-review-bg: #3a2c11;
+    --band-skip: #9aa4ba;    --band-skip-bg: #212b3d;
+    --band-exclude: #f1746b; --band-exclude-bg: #3a1a1a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "IBM Plex Sans", -apple-system, Segoe UI, sans-serif;
+    padding: 28px 16px 48px;
+  }
+  .wrap { max-width: 820px; margin: 0 auto; }
+  h1 {
+    font-size: clamp(21px, 4vw, 27px); font-weight: 600; letter-spacing: -0.01em;
+    margin: 0 0 6px; text-wrap: balance;
+  }
+  .sub { color: var(--ink-soft); font-size: 13.5px; margin: 0 0 18px; max-width: 620px; line-height: 1.55; }
+
+  .legend { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 16px; font-size: 12px; color: var(--ink-soft); }
+  .legend .item { display: flex; align-items: center; gap: 7px; }
+  .swatch { width: 22px; height: 12px; border-radius: 2px; flex: none; }
+  .swatch.built { background: var(--surface); border: 1.6px solid var(--ink); }
+  .swatch.planned { background: transparent; border: 1.6px dashed var(--ink-faint); }
+
+  figure { margin: 0; }
+  .diagram-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); padding: 6px; }
+  svg { display: block; max-width: 100%; height: auto; min-width: 620px; }
+  svg text { font-family: "IBM Plex Sans", sans-serif; fill: currentColor; }
+  svg .mono { font-family: "IBM Plex Mono", monospace; }
+
+  figcaption { color: var(--ink-faint); font-size: 12px; margin-top: 10px; text-align: center; }
+</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<div class="wrap">
+  <h1>Project Flow — Sales Intelligence Platform</h1>
+  <p class="sub">What we've agreed and built so far: the data pipeline (solid, verified end-to-end) and the planned stages ahead (dashed, documented but not yet built or deployed).</p>
+
+  <div class="legend">
+    <div class="item"><span class="swatch built"></span> Built &amp; verified</div>
+    <div class="item"><span class="swatch planned"></span> Planned / documented, not yet built</div>
+  </div>
+
+  <figure>
+    <div class="diagram-scroll">
+      <svg viewBox="0 0 760 1140" role="img" aria-label="Pipeline flow from raw Shodan JSONL through Bronze, Silver Hosts, Entity Resolution, Security Signals, and Gold scoring, branching into contact/review/skip/exclude bands, then on to planned LLM adjudication, contact enrichment, API and chatbot, and a documented-but-undeployed AWS production path.">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <polygon points="0,0 10,5 0,10" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <!-- 1. Raw JSONL -->
+        <rect x="220" y="20" width="320" height="54" rx="8" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.6"/>
+        <text x="380" y="42" text-anchor="middle" font-size="13.5" font-weight="600">Raw JSONL (Shodan export)</text>
+        <text x="380" y="60" text-anchor="middle" font-size="11.5" class="mono" fill="var(--ink-faint)">84.6GB · 8,914,693 records</text>
+
+        <line x1="380" y1="74" x2="380" y2="118" stroke="var(--ink-soft)" stroke-width="1.4" marker-end="url(#arrow)"/>
+        <text x="392" y="100" font-size="11" fill="var(--ink-faint)">manifest, not copied</text>
+
+        <!-- 2. Bronze -->
+        <rect x="220" y="118" width="320" height="52" rx="8" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.6"/>
+        <text x="380" y="139" text-anchor="middle" font-size="13.5" font-weight="600">Bronze</text>
+        <text x="380" y="157" text-anchor="middle" font-size="11.5" fill="var(--ink-faint)">source-file manifest only</text>
+
+        <line x1="380" y1="170" x2="380" y2="214" stroke="var(--ink-soft)" stroke-width="1.4" marker-end="url(#arrow)"/>
+        <text x="392" y="196" font-size="11" fill="var(--ink-faint)">DuckDB read_json — flatten &amp; type</text>
+
+        <!-- 3. Silver Hosts -->
+        <rect x="220" y="214" width="320" height="54" rx="8" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.6"/>
+        <text x="380" y="236" text-anchor="middle" font-size="13.5" font-weight="600">Silver Hosts</text>
+        <text x="380" y="254" text-anchor="middle" font-size="11.5" class="mono" fill="var(--ink-faint)">8,914,693 rows · 368.7MB</text>
+
+        <line x1="380" y1="268" x2="380" y2="312" stroke="var(--ink-soft)" stroke-width="1.4" marker-end="url(#arrow)"/>
+        <text x="392" y="294" font-size="11" fill="var(--ink-faint)">entity resolution — domain / org / unresolved</text>
+
+        <!-- 4. Silver Companies -->
+        <rect x="220" y="312" width="320" height="54" rx="8" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.6"/>
+        <text x="380" y="334" text-anchor="middle" font-size="13.5" font-weight="600">Silver Companies</text>
+        <text x="380" y="352" text-anchor="middle" font-size="11.5" class="mono" fill="var(--ink-faint)">187,106 resolved (9.0% domain, 13.1% org)</text>
+
+        <line x1="380" y1="366" x2="380" y2="410" stroke="var(--ink-soft)" stroke-width="1.4" marker-end="url(#arrow)"/>
+        <text x="392" y="392" font-size="11" fill="var(--ink-faint)">aggregate CVE / EPSS / EOL / ports</text>
+
+        <!-- 5. Security Signals -->
+        <rect x="220" y="410" width="320" height="52" rx="8" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.6"/>
+        <text x="380" y="431" text-anchor="middle" font-size="13.5" font-weight="600">Security Signals</text>
+        <text x="380" y="449" text-anchor="middle" font-size="11.5" fill="var(--ink-faint)">per-company urgency inputs</text>
+
+        <line x1="380" y1="462" x2="380" y2="506" stroke="var(--ink-soft)" stroke-width="1.4" marker-end="url(#arrow)"/>
+        <text x="392" y="488" font-size="11" fill="var(--ink-faint)">fit × urgency → contact_score</text>
+
+        <!-- 6. Gold Accounts -->
+        <rect x="220" y="506" width="320" height="54" rx="8" fill="var(--surface)" stroke="var(--ink)" stroke-width="2"/>
+        <text x="380" y="528" text-anchor="middle" font-size="13.5" font-weight="600">Gold Accounts</text>
+        <text x="380" y="546" text-anchor="middle" font-size="11.5" class="mono" fill="var(--ink-faint)">187,106 scored, banded, why[]</text>
+
+        <line x1="380" y1="560" x2="380" y2="588" stroke="var(--ink-soft)" stroke-width="1.4" marker-end="url(#arrow)"/>
+
+        <!-- band row -->
+        <rect x="59" y="588" width="150" height="52" rx="7" fill="var(--band-contact-bg)" stroke="var(--band-contact)" stroke-width="1.6"/>
+        <text x="134" y="609" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--band-contact)">Contact</text>
+        <text x="134" y="626" text-anchor="middle" font-size="11" class="mono" fill="var(--band-contact)">202 · 0.1%</text>
+
+        <rect x="223" y="588" width="150" height="52" rx="7" fill="var(--band-review-bg)" stroke="var(--band-review)" stroke-width="1.6"/>
+        <text x="298" y="609" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--band-review)">Review</text>
+        <text x="298" y="626" text-anchor="middle" font-size="11" class="mono" fill="var(--band-review)">13,562 · 7.2%</text>
+
+        <rect x="387" y="588" width="150" height="52" rx="7" fill="var(--band-skip-bg)" stroke="var(--band-skip)" stroke-width="1.6"/>
+        <text x="462" y="609" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--band-skip)">Skip</text>
+        <text x="462" y="626" text-anchor="middle" font-size="11" class="mono" fill="var(--band-skip)">172,816 · 92.4%</text>
+
+        <rect x="551" y="588" width="150" height="52" rx="7" fill="var(--band-exclude-bg)" stroke="var(--band-exclude)" stroke-width="1.6"/>
+        <text x="626" y="609" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--band-exclude)">Exclude</text>
+        <text x="626" y="626" text-anchor="middle" font-size="11" class="mono" fill="var(--band-exclude)">526 · 0.3%</text>
+
+        <!-- Review -> LLM adjudication (dashed) -->
+        <polyline points="298,640 298,672 380,672 380,700" fill="none" stroke="var(--ink-faint)" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
+
+        <!-- LLM Adjudication (planned) -->
+        <rect x="220" y="700" width="320" height="56" rx="8" fill="none" stroke="var(--ink-faint)" stroke-width="1.6" stroke-dasharray="6 4"/>
+        <text x="380" y="722" text-anchor="middle" font-size="13" font-weight="600" fill="var(--ink-soft)">LLM Adjudication</text>
+        <text x="380" y="740" text-anchor="middle" font-size="11" fill="var(--ink-faint)">Sprint 4 — reviews the 13,562 borderline accounts</text>
+
+        <!-- Contact band -> Hunter.io directly (dashed elbow around the side) -->
+        <polyline points="134,640 134,808 220,808" fill="none" stroke="var(--ink-faint)" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
+        <text x="20" y="730" font-size="11" fill="var(--ink-faint)" transform="rotate(-90 20 730)" text-anchor="middle">contact band, direct</text>
+
+        <!-- LLM Adjudication -> Hunter.io (dashed) -->
+        <line x1="380" y1="756" x2="380" y2="800" stroke="var(--ink-faint)" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
+        <text x="392" y="782" font-size="11" fill="var(--ink-faint)">approved subset</text>
+
+        <!-- Hunter.io Enrichment (planned) -->
+        <rect x="220" y="808" width="320" height="56" rx="8" fill="none" stroke="var(--ink-faint)" stroke-width="1.6" stroke-dasharray="6 4"/>
+        <text x="380" y="830" text-anchor="middle" font-size="13" font-weight="600" fill="var(--ink-soft)">Hunter.io Enrichment</text>
+        <text x="380" y="848" text-anchor="middle" font-size="11" fill="var(--ink-faint)">Sprint 5 — real calls, contact band only</text>
+
+        <line x1="380" y1="864" x2="380" y2="900" stroke="var(--ink-faint)" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
+
+        <!-- API + Chatbot (planned) -->
+        <rect x="220" y="900" width="320" height="56" rx="8" fill="none" stroke="var(--ink-faint)" stroke-width="1.6" stroke-dasharray="6 4"/>
+        <text x="380" y="922" text-anchor="middle" font-size="13" font-weight="600" fill="var(--ink-soft)">API + Chatbot</text>
+        <text x="380" y="940" text-anchor="middle" font-size="11" fill="var(--ink-faint)">Sprint 5–6 — FastAPI + tool-calling loop over Gold</text>
+
+        <line x1="380" y1="956" x2="380" y2="994" stroke="var(--ink-faint)" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
+        <text x="392" y="978" font-size="11" fill="var(--ink-faint)">would deploy to</text>
+
+        <!-- AWS production path (planned, wide) -->
+        <rect x="120" y="994" width="520" height="122" rx="9" fill="none" stroke="var(--ink-faint)" stroke-width="1.6" stroke-dasharray="6 4"/>
+        <text x="380" y="1018" text-anchor="middle" font-size="13.5" font-weight="600" fill="var(--ink-soft)">AWS Production Path — documented, not deployed</text>
+        <text x="380" y="1040" text-anchor="middle" font-size="11.5" fill="var(--ink-faint)">S3 (data lake) · DynamoDB (Gold serving) · Lambda (API/chatbot)</text>
+        <text x="380" y="1058" text-anchor="middle" font-size="11.5" fill="var(--ink-faint)">Batch/Fargate + Step Functions (scheduled, containerized ETL)</text>
+        <text x="380" y="1084" text-anchor="middle" font-size="12" font-weight="600" fill="var(--accent)">kept local — $0 cost ceiling, by design</text>
+      </svg>
+    </div>
+    <figcaption>Solid boxes are running against real data today; dashed boxes are the agreed next steps, not yet built.</figcaption>
+  </figure>
+</div>

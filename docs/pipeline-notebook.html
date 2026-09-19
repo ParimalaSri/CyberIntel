@@ -1,0 +1,316 @@
+<title>Pipeline Notebook</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --surface: #ffffff; --border: #dbe0e7;
+    --ink: #14181f; --ink-soft: #545e6e; --ink-faint: #8a93a3;
+    --accent: #0f6e6a; --accent-soft: #e3f1ef;
+    --cell-bg: #f0f2f5; --cell-border: #d7dce3;
+    --out-bg: #ffffff;
+    --prompt-in: #2f6f4f; --prompt-out: #9b3d3d;
+    --bad-bg: #fdecec; --bad-border: #f0b8b8; --bad-ink: #9c2b2b;
+    --good-bg: #eaf7ee; --good-border: #b7e2c3; --good-ink: #1e7a41;
+    --drop-bg: #f3f0e6; --drop-border: #e3d9b8; --drop-ink: #8a6d1f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0d1218; --surface: #141b24; --border: #29323e;
+      --ink: #e7ebf1; --ink-soft: #a5aec0;
+      --ink-faint: #77839a; --accent: #52d6cd; --accent-soft: #123331;
+      --cell-bg: #182029; --cell-border: #2c3644;
+      --out-bg: #0f151c;
+      --prompt-in: #6fd39a; --prompt-out: #e28a8a;
+      --bad-bg: #301716; --bad-border: #5c2b2a; --bad-ink: #f0a3a3;
+      --good-bg: #12291b; --good-border: #285a37; --good-ink: #7fd99b;
+      --drop-bg: #2a2413; --drop-border: #5a4c22; --drop-ink: #e0c467;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1218; --surface: #141b24; --border: #29323e;
+    --ink: #e7ebf1; --ink-soft: #a5aec0; --ink-faint: #77839a;
+    --accent: #52d6cd; --accent-soft: #123331;
+    --cell-bg: #182029; --cell-border: #2c3644;
+    --out-bg: #0f151c;
+    --prompt-in: #6fd39a; --prompt-out: #e28a8a;
+    --bad-bg: #301716; --bad-border: #5c2b2a; --bad-ink: #f0a3a3;
+    --good-bg: #12291b; --good-border: #285a37; --good-ink: #7fd99b;
+    --drop-bg: #2a2413; --drop-border: #5a4c22; --drop-ink: #e0c467;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: "IBM Plex Sans", -apple-system, Segoe UI, sans-serif; padding: 0 0 60px; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 16px; }
+
+  .topbar { position: sticky; top: 0; background: var(--bg); padding: 18px 0 12px; z-index: 5; border-bottom: 1px solid var(--border); margin-bottom: 22px; }
+  .topbar h1 { font-size: clamp(19px,4vw,24px); font-weight: 600; margin: 0 0 4px; }
+  .topbar .sub { font-size: 12.5px; color: var(--ink-faint); margin: 0 0 12px; }
+  .toc { display: flex; gap: 8px; flex-wrap: wrap; }
+  .toc a { font-size: 11.5px; font-family: "IBM Plex Mono",monospace; color: var(--accent); text-decoration: none; border: 1px solid var(--border); padding: 3px 9px; border-radius: 100px; }
+  .toc a:hover { border-color: var(--accent); }
+
+  section.stage { margin-bottom: 10px; scroll-margin-top: 90px; }
+  .stage-head { display: flex; align-items: baseline; gap: 10px; margin: 44px 0 14px; }
+  .stage-head .num { font-family: "IBM Plex Mono",monospace; font-size: 13px; color: var(--accent); border: 1.5px solid var(--accent); border-radius: 6px; padding: 2px 8px; }
+  .stage-head h2 { font-size: 19px; font-weight: 600; margin: 0; }
+
+  .md { font-size: 13.5px; line-height: 1.65; color: var(--ink-soft); margin: 0 0 14px; max-width: 700px; }
+  .md b { color: var(--ink); font-weight: 600; }
+  .md code { font-family: "IBM Plex Mono",monospace; background: var(--cell-bg); padding: 1px 5px; border-radius: 4px; font-size: 12px; color: var(--ink); }
+
+  h3.sub-head { font-size: 13px; font-weight: 600; color: var(--ink); margin: 22px 0 8px; text-transform: uppercase; letter-spacing: .03em; }
+
+  .cell { display: grid; grid-template-columns: 54px 1fr; margin-bottom: 4px; }
+  .cell .prompt { font-family: "IBM Plex Mono",monospace; font-size: 11px; padding-top: 10px; text-align: right; padding-right: 8px; white-space: nowrap; }
+  .cell.code .prompt { color: var(--prompt-in); }
+  .cell.out .prompt { color: var(--prompt-out); }
+  .cell-body { border-radius: 7px; padding: 10px 13px; overflow-x: auto; }
+  .cell.code .cell-body { background: var(--cell-bg); border: 1px solid var(--cell-border); }
+  .cell.out .cell-body { background: var(--out-bg); border: 1px solid var(--border); margin-bottom: 14px; }
+  .cell pre { margin: 0; font-family: "IBM Plex Mono",monospace; font-size: 11.5px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; color: var(--ink); }
+  .cell .cmt { color: var(--ink-faint); }
+  .cell .k { color: var(--accent); }
+
+  .flag { display: inline-block; font-family: "IBM Plex Mono",monospace; font-size: 10.5px; font-weight: 600; padding: 2px 7px; border-radius: 4px; margin-right: 5px; }
+  .flag.drop { background: var(--drop-bg); color: var(--drop-ink); border: 1px solid var(--drop-border); }
+  .flag.keep { background: var(--good-bg); color: var(--good-ink); border: 1px solid var(--good-border); }
+
+  .issue { border: 1px solid var(--bad-border); background: var(--bad-bg); border-radius: 9px; padding: 14px 16px; margin: 16px 0 22px; }
+  .issue .tag { font-family: "IBM Plex Mono",monospace; font-size: 10.5px; font-weight: 700; color: var(--bad-ink); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; display: block; }
+  .issue h4 { margin: 0 0 8px; font-size: 14px; color: var(--ink); }
+  .issue p { font-size: 12.5px; line-height: 1.6; color: var(--ink-soft); margin: 8px 0; }
+  .issue p b { color: var(--ink); }
+  .issue .fixnote { background: var(--good-bg); border: 1px solid var(--good-border); border-radius: 7px; padding: 8px 12px; font-size: 12px; color: var(--good-ink); margin-top: 10px; }
+  .issue .fixnote b { color: var(--good-ink); }
+
+  .divider { text-align: center; color: var(--ink-faint); font-size: 16px; letter-spacing: 6px; margin: 8px 0 4px; }
+</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<div class="topbar">
+  <div class="wrap" style="padding:0;">
+    <h1>Pipeline Notebook</h1>
+    <p class="sub">Describe &rarr; sample &rarr; decide what to drop &rarr; result &rarr; quality issues found &rarr; fix logic &rarr; re-sample. Every value below is real, pulled from the actual files.</p>
+    <div class="toc">
+      <a href="#s1">1. Raw &rarr; Silver Hosts</a>
+      <a href="#s2">2. Entity Resolution</a>
+      <a href="#s3">3. Security Signals</a>
+      <a href="#s4">4. Gold Scoring</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<!-- ================= STAGE 1 ================= -->
+<section class="stage" id="s1">
+  <div class="stage-head"><span class="num">01</span><h2>Raw JSONL &rarr; Silver Hosts</h2></div>
+  <p class="md">The source is a Shodan-style internet scan export: one JSON object per line, one line per exposed service observation (IP + port + timestamp). <b>84.6GB, 8,914,693 lines.</b> Before deciding what to keep, look at what one record actually contains.</p>
+
+  <div class="cell code"><div class="prompt">In&nbsp;[1]:</div><div class="cell-body"><pre><span class="cmt"># first line of the raw file, read literally</span>
+head -n 1 2026-09-14T10-00-00.json</pre></div></div>
+  <div class="cell out"><div class="prompt">Out[1]:</div><div class="cell-body"><pre>{
+  "data": "HTTP/1.1 400 Bad Request\r\nServer: nginx\r\n...",
+  "opts": {}, "port": 15123, "hostnames": [], "domains": [],
+  "location": {"city": "Tseung Kwan O", "country_code": "HK", ...},
+  "org": "Meteverse Limited.", "isp": "Meteverse Limited.",
+  "product": "nginx",
+  "http": {
+    "status": 400, "title": "400 Bad Request", "server": "nginx",
+    "html": "&lt;!DOCTYPE html&gt;\n&lt;html&gt;...(2,407 bytes of full page HTML)...",
+    "headers": {...}, "redirects": [], "robots": null, "sitemap": null,
+    "securitytxt": null, "title_hash": -674769028, "html_hash": 1742693465, ...
+  },
+  "ip_str": "138.113.61.106", "asn": "AS54994",
+  "_shodan": {"module": "auto", "crawler": "85a2598...", ...},
+  "ssh": null, "ftp": null, "mongodb": null, "hikvision": null, ...  <span class="cmt">(~45 more device-specific fields, all null here)</span>
+}</pre></div></div>
+
+  <p class="md">A DuckDB schema scan of the full file surfaces <b>60+ top-level fields</b>, most device-specific (<code>hikvision</code>, <code>mongodb</code>, <code>mikrotik_winbox</code>, <code>philips_hue</code>...). Deciding what a sales-scoring query actually needs:</p>
+
+  <div class="cell out"><div class="prompt"></div><div class="cell-body"><pre><span class="flag drop">DROP</span> data, html, screenshot.data      <span class="cmt">raw banner text / full page HTML / base64 images — not queryable signals</span>
+<span class="flag drop">DROP</span> ssl.chain                     <span class="cmt">raw PEM certs, ~500B+/row where present, cert subject not pre-parsed anyway</span>
+<span class="flag drop">DROP</span> ~45 device-specific structs   <span class="cmt">hikvision/mongodb/mikrotik/philips_hue/etc — null on &gt;99% of rows</span>
+<span class="flag keep">KEEP</span> ip_str, port, transport, timestamp
+<span class="flag keep">KEEP</span> hostnames, domains             <span class="cmt">entity resolution backbone</span>
+<span class="flag keep">KEEP</span> location, org, isp, asn
+<span class="flag keep">KEEP</span> os, product, devicetype, tags, cpe23
+<span class="flag keep">KEEP</span> vulns                         <span class="cmt">CVE map: cvss, epss, summary</span>
+<span class="flag keep">KEEP</span> ssl.jarm, http.status/server/title, _shodan.module</pre></div></div>
+
+  <h3 class="sub-head">Issue found while running the first ingestion attempt</h3>
+  <div class="issue">
+    <span class="tag">data quality issue #1 — oversized record</span>
+    <h4>One record is ~25MB, bigger than DuckDB's default 16MB object-size limit</h4>
+    <p>First run of <code>pipeline/silver/hosts.py</code> failed outright:</p>
+    <div class="cell out" style="margin:0 0 10px;"><div class="prompt"></div><div class="cell-body" style="background:var(--bad-bg);border-color:var(--bad-border);"><pre style="color:var(--bad-ink);">_duckdb.InvalidInputException: "maximum_object_size" of 16777216 bytes
+exceeded while reading file (&gt;25323446 bytes).</pre></div></div>
+    <p><b>Root cause:</b> a rare record (likely with a large embedded screenshot/HTML blob) exceeds the parser's default per-object cap.</p>
+    <p><b>Fix logic:</b> raise <code>maximum_object_size</code> to 128MB in the <code>read_json()</code> call — generous headroom without loading the whole 84.6GB into memory at once (DuckDB still streams row by row).</p>
+    <div class="fixnote"><b>Fixed:</b> <code>read_json(..., maximum_object_size = 134217728)</code></div>
+  </div>
+
+  <h3 class="sub-head">Result</h3>
+  <p class="md">Same row count as input — this stage only removes unused columns and compresses, it drops zero rows (verified by a null-rate/row-count sanity check).</p>
+  <div class="cell code"><div class="prompt">In&nbsp;[2]:</div><div class="cell-body"><pre>SELECT count(*) FROM read_parquet('data/silver/hosts.parquet')</pre></div></div>
+  <div class="cell out"><div class="prompt">Out[2]:</div><div class="cell-body"><pre><b>8,914,693</b> rows   <span class="cmt">— matches the raw line count exactly</span>
+368.65 MB   <span class="cmt">(was 84.6 GB raw &mdash; 9,494 bytes/row &rarr; 43.4 bytes/row, ~219x, from column projection + columnar/ZSTD compression, not row loss)</span></pre></div></div>
+  <div class="cell out"><div class="prompt"></div><div class="cell-body"><pre><span class="cmt"># the same record from In[1], read back from Parquet</span>
+ip_str=138.113.61.106  port=15123  org=Meteverse Limited.
+product=nginx  http_status=400  http_server=nginx  country_code=HK
+<span class="cmt">(html, headers, redirects, robots.txt: gone, by design)</span></pre></div></div>
+</section>
+
+<div class="divider">&#8942;</div>
+
+<!-- ================= STAGE 2 ================= -->
+<section class="stage" id="s2">
+  <div class="stage-head"><span class="num">02</span><h2>Entity Resolution: host rows &rarr; companies</h2></div>
+  <p class="md">Silver Hosts is at <b>(ip, port, timestamp)</b> grain — one row per exposed service. A sales rep thinks in <b>companies</b>. Look at what the identifying fields actually contain before writing the merge logic:</p>
+
+  <div class="cell code"><div class="prompt">In&nbsp;[3]:</div><div class="cell-body"><pre>SELECT org, count(*) FROM hosts GROUP BY 1 ORDER BY 2 DESC LIMIT 5</pre></div></div>
+  <div class="cell out"><div class="prompt">Out[3]:</div><div class="cell-body"><pre>Google LLC              2,020,662
+Incapsula Inc           1,737,105
+Cloudflare, Inc.          302,320
+Amazon.com, Inc.          278,775
+Aliyun Computing Co.      235,920</pre></div></div>
+
+  <p class="md">The top <code>org</code> values are all hyperscalers/CDNs — the tenant running on that IP, not the company we'd sell to. <code>org</code> alone can't be the join key. Decision: a 3-tier resolver — <code>domain</code> (from <code>hostnames</code>/<code>domains</code>, filtered against a hyperscaler/CDN/brand denylist) &rarr; <code>org</code> (fallback, filtered against the same + generic-ISP keywords) &rarr; <code>unresolved</code> (counted, not discarded).</p>
+
+  <div class="cell out"><div class="prompt"></div><div class="cell-body"><pre><span class="flag drop">DROP-ish</span> 6,952,490 rows (78.0%) &rarr; unresolved  <span class="cmt">hyperscaler/CDN tenant IPs, can't attribute to a real business</span>
+<span class="flag keep">RESOLVE</span> 1,163,517 rows (13.1%) &rarr; org-tier
+<span class="flag keep">RESOLVE</span>   798,686 rows ( 9.0%) &rarr; domain-tier
+                8,914,693 total  &nbsp;<span class="cmt">✓ sums to Stage 1's row count</span></pre></div></div>
+
+  <h3 class="sub-head">Issue #2 — NULL propagation silently mis-buckets rows</h3>
+  <div class="issue">
+    <span class="tag">data quality issue #2</span>
+    <h4>Rows with a missing ISP fell into "unresolved" even when the org was a real company</h4>
+    <p>First resolution run, sampling what landed in the unresolved bucket:</p>
+    <div class="cell out" style="margin:0 0 10px;"><div class="prompt"></div><div class="cell-body" style="background:var(--bad-bg);border-color:var(--bad-border);"><pre style="color:var(--bad-ink);">('ACEVILLE PTE.LTD.', <span style="text-decoration:underline;">None</span>, 84972)   <span class="cmt">org, isp, count &mdash; isp is NULL</span></pre></div></div>
+    <p><b>Root cause:</b> the hyperscaler-check was <code>lower(isp) LIKE '%google%' OR ...</code>. In SQL, <code>NULL LIKE anything</code> evaluates to <code>NULL</code>, not <code>false</code> — and <code>NULL</code> poisons the surrounding <code>OR</code>/<code>NOT</code> chain, so any row with a missing <code>isp</code> silently fell through to <code>unresolved</code> regardless of what <code>org</code> said.</p>
+    <p><b>Fix logic:</b> wrap in <code>COALESCE(lower(isp), '')</code> so a missing value compares as empty string (definitively false) instead of unknown.</p>
+    <div class="fixnote"><b>Fixed:</b> unresolved dropped from 80.0% &rarr; 78.0% of rows; ACEVILLE now correctly lands in <code>org</code>-tier.</div>
+  </div>
+
+  <h3 class="sub-head">Issue #3 — punctuation splits one company into two keys</h3>
+  <div class="issue">
+    <span class="tag">data quality issue #3</span>
+    <h4>"Meteverse Limited" and "Meteverse Limited." were treated as different companies</h4>
+    <div class="cell out" style="margin:0 0 10px;"><div class="prompt"></div><div class="cell-body" style="background:var(--bad-bg);border-color:var(--bad-border);"><pre style="color:var(--bad-ink);">('meteverse limited',  78,292)
+('meteverse limited.', 62,702)   <span class="cmt">&larr; same company, trailing period only</span></pre></div></div>
+    <p><b>Root cause:</b> org-tier key was <code>lower(trim(org))</code> — trims whitespace but not trailing punctuation.</p>
+    <p><b>Fix logic:</b> <code>regexp_replace(lower(trim(org)), '[\s.,]+$', '')</code> — strip trailing periods/commas/whitespace before grouping.</p>
+    <div class="fixnote"><b>Fixed:</b> <pre style="margin:4px 0 0;color:var(--good-ink);">('meteverse limited', <b>140,994</b>)   <span class="cmt">78,292 + 62,702, merged — verified equal</span></pre></div>
+  </div>
+
+  <h3 class="sub-head">Issue #4 — a handful of "companies" are actually proxy networks</h3>
+  <div class="issue">
+    <span class="tag">data quality issue #4</span>
+    <h4>No single business owns 130,000 IPs</h4>
+    <p>Top org-tier companies by host count included entries no real SMB could produce: <code>ACEVILLE PTE.LTD.</code> (130,066 hosts, 3 ASNs), <code>Internet Rimon</code> (92,769), <code>Meteverse Limited</code> (140,994) — proxy/hosting networks whose names don't happen to contain any denylist keyword.</p>
+    <p><b>Fix logic:</b> flag (not drop) org-tier rows with <code>host_count &ge; 500</code> as <code>likely_infra_or_proxy</code> — keeps the row for transparency, lets scoring discount it.</p>
+    <div class="fixnote"><b>Result:</b> 237 flagged companies (0.13% of resolved companies) hold <b>780,194 hosts — ~40% of all resolved host volume</b>. Confirms these would have dominated any un-flagged volume-based score.</div>
+  </div>
+
+  <h3 class="sub-head">Issue #5 — row-count mismatch surfaced a join bug</h3>
+  <div class="issue">
+    <span class="tag">data quality issue #5</span>
+    <h4>Security Signals (next stage) had fewer rows than Silver Companies — 186,435 vs 187,007</h4>
+    <p>Two compounding bugs, found by insisting the two tables' counts match exactly rather than accepting "close enough":</p>
+    <p>(a) <b>Key collision:</b> joining/grouping on <code>company_key</code> alone let an unrelated domain-tier and org-tier key collide if the strings happened to match. <b>Fix:</b> use the composite <code>(company_key, resolution_tier)</code> everywhere downstream.</p>
+    <p>(b) <b>NULL join:</b> <code>ip_str</code> is NULL on 1.2% of rows; <code>NULL = NULL</code> is unknown in SQL, so those rows never joined. <b>Fix:</b> join on <code>(ip_str, port, ts)</code> with <code>IS NOT DISTINCT FROM</code> for <code>ip_str</code> (NULL-safe equality).</p>
+    <div class="fixnote"><b>Fixed:</b> counts now match exactly, <b>187,106 = 187,106</b>.</div>
+  </div>
+
+  <h3 class="sub-head">Result</h3>
+  <div class="cell code"><div class="prompt">In&nbsp;[4]:</div><div class="cell-body"><pre>SELECT company_key, resolution_tier, host_count, likely_infra_or_proxy
+FROM companies WHERE company_key = 'goodsrv.de'</pre></div></div>
+  <div class="cell out"><div class="prompt">Out[4]:</div><div class="cell-body"><pre>company_key = goodsrv.de       resolution_tier = domain
+host_count  = 161              <span class="cmt">&larr; 161 separate host rows collapsed into 1</span>
+primary_org = netcup GmbH      primary_country = DE
+likely_infra_or_proxy = False</pre></div></div>
+  <div class="cell out"><div class="prompt"></div><div class="cell-body"><pre><b>187,106</b> companies total   <span class="cmt">49,897 org-tier + 137,209 domain-tier</span></pre></div></div>
+</section>
+
+<div class="divider">&#8942;</div>
+
+<!-- ================= STAGE 3 ================= -->
+<section class="stage" id="s3">
+  <div class="stage-head"><span class="num">03</span><h2>Security Signals — per-company urgency</h2></div>
+  <p class="md">Roll up each company's hosts into the inputs a risk score needs: CVE exposure, EOL software, self-signed certs, risky open ports.</p>
+
+  <div class="cell code"><div class="prompt">In&nbsp;[5]:</div><div class="cell-body"><pre>SELECT company_key, cve_count, eol_count, self_signed_count
+FROM security_signals ORDER BY cve_count DESC LIMIT 3</pre></div></div>
+
+  <h3 class="sub-head">Issue #6 — counts silently became NULL / floats</h3>
+  <div class="issue">
+    <span class="tag">data quality issue #6</span>
+    <h4>"hurricane electric" showed eol_count = None instead of 0, and numbers rendered as floats</h4>
+    <div class="cell out" style="margin:0 0 10px;"><div class="prompt"></div><div class="cell-body" style="background:var(--bad-bg);border-color:var(--bad-border);"><pre style="color:var(--bad-ink);">('hurricane electric', 'org', <b>246720.0</b>, 10.0, 0.99999, True, <b>None</b>, <b>None</b>, 0.0)
+                              <span class="cmt">cve_count as float ^        eol_count/self_signed_count NULL ^</span></pre></div></div>
+    <p><b>Root cause, part 1 (NULL):</b> <code>is_eol_product::INT</code> is itself NULL whenever the host's <code>tags</code> field is NULL (33.1% of rows) — <code>list_contains(NULL, 'x')</code> returns NULL, not false. <code>SUM()</code> of an all-NULL group returns NULL, not 0.</p>
+    <p><b>Root cause, part 2 (float):</b> Parquet has no native 128-bit integer type. DuckDB's <code>SUM()</code> computes internally as HUGEINT, then silently downcasts to DOUBLE on write — which is why the customer-facing <code>why[]</code> text later read <b>"16.0 host(s)"</b> instead of "16".</p>
+    <p><b>Fix logic:</b> <code>CAST(coalesce(sum(is_eol_product::INT), 0) AS BIGINT)</code> on every count aggregate — explicit zero-default and explicit integer type.</p>
+    <div class="fixnote"><b>Fixed:</b> counts are clean integers; "16 host(s)" not "16.0 host(s)".</div>
+  </div>
+
+  <h3 class="sub-head">Result</h3>
+  <div class="cell out"><div class="prompt">Out[5]:</div><div class="cell-body"><pre>company_key = goodsrv.de
+cve_count = <b>462</b>   max_cvss = 10.0   max_epss = 0.99999   has_recent_cve = True
+eol_count = 16   self_signed_count = 9   c2_count = 1
+risky_open_port_count = 1   distinct_port_count = 40</pre></div></div>
+  <p class="md">Row count: <b>187,106 &rarr; 187,106</b> — this stage aggregates fields per already-resolved company, it doesn't change which companies exist.</p>
+</section>
+
+<div class="divider">&#8942;</div>
+
+<!-- ================= STAGE 4 ================= -->
+<section class="stage" id="s4">
+  <div class="stage-head"><span class="num">04</span><h2>Gold Scoring — fit &times; urgency &rarr; band</h2></div>
+  <p class="md">Combine reachability/size/vertical/geography (fit) with CVE/EPSS/EOL/self-signed/risky-ports (urgency) into one <code>contact_score</code>, banded <b>contact / review / skip / exclude</b>.</p>
+
+  <div class="cell code"><div class="prompt">In&nbsp;[6]:</div><div class="cell-body"><pre>SELECT company_key, primary_org, band, contact_score, why
+FROM accounts ORDER BY contact_score DESC LIMIT 3</pre></div></div>
+
+  <h3 class="sub-head">Issue #7 — a "contact"-band prospect that wasn't real</h3>
+  <div class="issue">
+    <span class="tag">data quality issue #7</span>
+    <h4>amazon.com scored 93 and landed in the contact band</h4>
+    <div class="cell out" style="margin:0 0 10px;"><div class="prompt"></div><div class="cell-body" style="background:var(--bad-bg);border-color:var(--bad-border);"><pre style="color:var(--bad-ink);">company_key = amazon.com    primary_org = <b>NTT America, Inc.</b>   c2_count = 1</pre></div></div>
+    <p><b>Root cause:</b> the resolved <code>org</code> wasn't Amazon at all — <code>NTT America, Inc.</code>, and the host was flagged <code>c2</code> (possible command-and-control). Almost certainly a spoofed reverse-DNS PTR record impersonating the brand: PTR records are set by whoever owns the IP block, not by the real domain's registrant, so they're trivially faked. Our resolver trusted the domain string at face value.</p>
+    <p><b>Fix logic:</b> added a <code>BRAND_DOMAINS</code> denylist (amazon.com, google.com, microsoft.com, apple.com...) — at that scale, a resolved domain is never a genuine SMB lead, it's either infra we should've already caught, or impersonation.</p>
+  </div>
+
+  <div class="issue">
+    <span class="tag">data quality issue #8</span>
+    <h4>'localhost.' aggregated 2,375 unrelated hosts into one fake company</h4>
+    <div class="cell out" style="margin:0 0 10px;"><div class="prompt"></div><div class="cell-body" style="background:var(--bad-bg);border-color:var(--bad-border);"><pre style="color:var(--bad-ink);">company_key = localhost.   host_count = 2375
+sample_hostnames = [undefined.hostname.localhost, a248.e.akamai.net, localhost]</pre></div></div>
+    <p><b>Root cause:</b> generic placeholder hostnames from misconfigured devices across many unrelated networks all reduce to the same reserved domain string.</p>
+    <p><b>Fix logic:</b> added a <code>RESERVED_PLACEHOLDER_DOMAINS</code> denylist (localhost, localdomain, invalid, example.com/net/org).</p>
+    <div class="fixnote"><b>Fixed:</b> re-ran the full pipeline — neither amazon.com nor localhost. appear in the output anymore.</div>
+  </div>
+
+  <h3 class="sub-head">Result</h3>
+  <div class="cell out"><div class="prompt">Out[6]:</div><div class="cell-body"><pre>company_key = goodsrv.de
+fit_score = 100  (reachable +40, size +20, database tag +20, DE target +20)
+urgency_score = 100  (c2_count&gt;0 overrides to max)
+contact_score = 100  &rarr;  band = <b>contact</b>
+
+why = [
+  "462 known CVE(s), max CVSS 10.0, max EPSS 1.0",
+  "Includes a 2025+ (recently disclosed) CVE",
+  "16 host(s) running end-of-life software",
+  "9 host(s) with self-signed TLS certificates",
+  "1 host(s) with a high-risk port exposed (VNC/RDP/MSSQL/...)",
+  "Possible active compromise: 1 host(s) flagged for C2 activity",
+  "1 exposed database service(s)"
+]</pre></div></div>
+  <div class="cell out"><div class="prompt"></div><div class="cell-body"><pre>band distribution, all 187,106 companies:
+  contact <b>202</b>  (0.1%)   review <b>13,562</b> (7.2%)
+  skip    <b>172,816</b> (92.4%)   exclude <b>526</b> (0.3%)</pre></div></div>
+
+  <p class="md" style="margin-top:26px;"><b>Still open, queued next:</b> the domain-tier equivalent of Issue #4 — <code>comcast.net</code>, <code>spectrum.com</code>, <code>sakura.ne.jp</code> are large residential-ISP/hosting domains that only got excluded by luck (a coincidental honeypot tag). <code>likely_infra_or_proxy</code> currently only applies to org-tier; needs extending to domain-tier host_count &ge; 500 too.</p>
+</section>
+
+</div>

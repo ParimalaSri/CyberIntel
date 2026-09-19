@@ -2,6 +2,13 @@
 
 Status: living document, updated every sprint (see [BACKLOG.md](BACKLOG.md)).
 
+Two visual companions to this doc (open in a browser):
+- [pipeline-flow.html](pipeline-flow.html) — the diagram below, rendered
+- [pipeline-notebook.html](pipeline-notebook.html) — a notebook-style walkthrough
+  of every stage: sample input, what got dropped and why, the result, every
+  data quality issue found with root cause and fix, and a re-sample after
+  the fix
+
 ## Data pipeline (medallion)
 
 ```
