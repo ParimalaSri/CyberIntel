@@ -43,6 +43,7 @@ per_host AS (
         port,
         is_eol_product, is_self_signed, is_honeypot, is_c2,
         is_iot, is_vpn, is_database_tag,
+        screenshot_text,
         coalesce(cardinality(vulns), 0) AS row_cve_count,
         CASE WHEN vulns IS NOT NULL AND cardinality(vulns) > 0
              THEN list_max(list_transform(map_values(vulns), x -> x.cvss))
@@ -53,6 +54,9 @@ per_host AS (
         CASE WHEN vulns IS NOT NULL AND cardinality(vulns) > 0
              THEN len(list_filter(map_keys(vulns), k -> regexp_matches(k, 'CVE-202[5-9]-'))) > 0
              ELSE false END AS row_has_recent_cve,
+        CASE WHEN vulns IS NOT NULL AND cardinality(vulns) > 0
+             THEN len(list_filter(map_values(vulns), x -> x.verified))
+             ELSE 0 END AS row_verified_cve_count,
         (port IN ({RISKY_PORTS_SQL_LIST})) AS is_risky_port
     FROM joined
 )
@@ -61,6 +65,7 @@ SELECT
     resolution_tier,
     count(*) AS host_count,
     CAST(coalesce(sum(row_cve_count), 0) AS BIGINT) AS cve_count,
+    CAST(coalesce(sum(row_verified_cve_count), 0) AS BIGINT) AS verified_cve_count,
     max(row_max_cvss) AS max_cvss,
     max(row_max_epss) AS max_epss,
     bool_or(row_has_recent_cve) AS has_recent_cve,
@@ -72,7 +77,9 @@ SELECT
     CAST(coalesce(sum(is_vpn::INT), 0) AS BIGINT) AS vpn_count,
     CAST(coalesce(sum(is_database_tag::INT), 0) AS BIGINT) AS database_tag_count,
     CAST(coalesce(sum(is_risky_port::INT), 0) AS BIGINT) AS risky_open_port_count,
-    count(DISTINCT port) AS distinct_port_count
+    count(DISTINCT port) AS distinct_port_count,
+    bool_or(screenshot_text IS NOT NULL) AS has_screenshot_evidence,
+    max(screenshot_text) AS screenshot_evidence_text
 FROM per_host
 GROUP BY company_key, resolution_tier
 """

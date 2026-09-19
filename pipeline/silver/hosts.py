@@ -35,7 +35,8 @@ JSON_COLUMNS = """{
     'vulns': 'MAP(VARCHAR, STRUCT(cvss DOUBLE, cvss_version DOUBLE, cvss_v2 DOUBLE, summary VARCHAR, verified BOOLEAN, epss DOUBLE, ranking_epss DOUBLE))',
     'ssl': 'STRUCT(jarm VARCHAR)',
     'http': 'STRUCT(status BIGINT, server VARCHAR, title VARCHAR, host VARCHAR)',
-    '_shodan': 'STRUCT(module VARCHAR, region VARCHAR, ptr BOOLEAN)'
+    '_shodan': 'STRUCT(module VARCHAR, region VARCHAR, ptr BOOLEAN)',
+    'screenshot': 'STRUCT(labels VARCHAR[], text VARCHAR)'
 }"""
 
 SQL = f"""
@@ -66,6 +67,8 @@ COPY (
         http.server             AS http_server,
         http.title              AS http_title,
         _shodan.module          AS shodan_module,
+        screenshot.labels       AS screenshot_labels,
+        nullif(screenshot.text, '') AS screenshot_text,
         list_contains(tags, 'eol-product') AS is_eol_product,
         list_contains(tags, 'self-signed')  AS is_self_signed,
         list_contains(tags, 'honeypot')     AS is_honeypot,

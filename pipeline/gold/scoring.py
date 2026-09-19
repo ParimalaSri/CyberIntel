@@ -34,9 +34,10 @@ WITH base AS (
         c.sample_ips,
         c.sample_hostnames,
         c.likely_infra_or_proxy,
-        s.cve_count, s.max_cvss, s.max_epss, s.has_recent_cve,
+        s.cve_count, s.verified_cve_count, s.max_cvss, s.max_epss, s.has_recent_cve,
         s.eol_count, s.self_signed_count, s.honeypot_count, s.c2_count,
-        s.risky_open_port_count, s.distinct_port_count, s.database_tag_count
+        s.risky_open_port_count, s.distinct_port_count, s.database_tag_count,
+        s.has_screenshot_evidence, s.screenshot_evidence_text
     FROM read_parquet('{COMPANIES_PATH}') c
     JOIN read_parquet('{SIGNALS_PATH}') s
         ON c.company_key = s.company_key AND c.resolution_tier = s.resolution_tier
@@ -51,9 +52,10 @@ scored AS (
         + (CASE WHEN primary_country_code IN ({TARGET_COUNTRIES_SQL}) THEN 20 ELSE 10 END)
         AS fit_score,
         -- Urgency (0-100): how exposed are they right now
-        (CASE WHEN c2_count > 0 THEN 100 ELSE
+        (CASE WHEN c2_count > 0 OR has_screenshot_evidence THEN 100 ELSE
             LEAST(25 * coalesce(max_epss, 0), 25)
             + (CASE WHEN has_recent_cve THEN 10 ELSE 0 END)
+            + (CASE WHEN verified_cve_count > 0 THEN 10 ELSE 0 END)
             + (CASE WHEN eol_count > 0 THEN 15 ELSE 0 END)
             + (CASE WHEN self_signed_count > 0 THEN 10 ELSE 0 END)
             + (CASE WHEN risky_open_port_count > 0 THEN 20 ELSE 0 END)
@@ -73,9 +75,18 @@ SELECT *,
         ELSE 'skip'
     END AS band,
     list_filter([
+        CASE WHEN has_screenshot_evidence THEN
+            'Screenshot evidence of an exposed remote desktop login' ||
+            (CASE WHEN screenshot_evidence_text IS NOT NULL
+                  THEN ' (OCR text visible on screen: "' || left(screenshot_evidence_text, 120) || '")'
+                  ELSE '' END)
+        ELSE NULL END,
         CASE WHEN cve_count > 0 THEN
             cve_count || ' known CVE(s), max CVSS ' || max_cvss ||
             ', max EPSS ' || round(coalesce(max_epss, 0), 2)
+        ELSE NULL END,
+        CASE WHEN verified_cve_count > 0 THEN
+            verified_cve_count || ' of those CVE(s) are human-verified matches, not just CPE-inferred'
         ELSE NULL END,
         CASE WHEN has_recent_cve THEN 'Includes a 2025+ (recently disclosed) CVE' ELSE NULL END,
         CASE WHEN eol_count > 0 THEN eol_count || ' host(s) running end-of-life software' ELSE NULL END,

@@ -26,8 +26,8 @@ ENTITY RESOLUTION               pipeline/entity_resolution/resolve.py
   host row -> company, 3 confidence tiers: domain (hostnames/domains field,
   filtered against a hyperscaler/CDN/brand/placeholder denylist) -> org
   (org name, filtered against the same + generic-ISP keywords) ->
-  unresolved (counted, not discarded). 187,106 resolved out of 8.9M hosts
-  (9.0% domain-tier, 13.1% org-tier, 78.0% unresolved - expected, dataset
+  unresolved (counted, not discarded). 189,257 resolved out of 8.9M hosts
+  (7.5% domain-tier, 14.2% org-tier, 78.3% unresolved - expected, dataset
   skews heavily toward hyperscaler/CDN tenant IPs).
     |
     v
@@ -49,8 +49,11 @@ SECURITY SIGNALS      (fit inputs folded directly into scoring.py -
                      GOLD                          data/gold/accounts.parquet
        fit_score (reachability+size+vertical+geo) x urgency_score (CVE/EPSS+
        EOL+self-signed+risky ports, c2 overrides to 100) -> contact_score,
-       why[] explanation array. 187,106 rows: 202 contact (>=85), 13,562
-       review (50-84), 526 exclude (honeypot/infra-proxy), 172,816 skip.
+       why[] explanation array. 189,257 rows: 155 contact (>=85), 13,159
+       review (50-84), 662 exclude (honeypot/infra-proxy), 175,281 skip.
+       See BACKLOG.md Sprint 3.5 for the hardening round (screenshot
+       evidence, verified CVEs, domain-tier infra flag, denylist fixes)
+       that produced these final numbers.
                        |
           +------------+------------+
           v                         v
