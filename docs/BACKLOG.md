@@ -139,10 +139,17 @@ the remaining known gaps and add the one genuinely free signal we'd missed.
 ## Sprint 4 — LLM adjudication: skill, prompts, evals, tracing
 **Epic:** As a sales ops lead, I want the borderline-band AI decision to be
 measured and versioned, not a black box.
+- [x] `evals/account_scoring/labeled_set.jsonl` — 28 examples (16 contact /
+      8 skip / 4 escalate), stratified across the full review-band score
+      range (50-84), drafted by applying a stated corroboration rule and
+      approved. `evals/account_scoring/README.md` documents the rule, the
+      sampling method, and is explicit that this is expert judgment, not
+      objective ground truth (no real contact-outcome data exists) - so
+      precision/recall measures agreement with that judgment, not
+      "correctness" in an absolute sense.
 - [ ] `skills/account-scoring/SKILL.md`
 - [ ] `prompts/account_scoring/v1.md` (+ v2 once we iterate)
 - [ ] Tracing writer (schema in ARCHITECTURE.md) wired into every LLM call
-- [ ] `evals/account_scoring/labeled_set.jsonl` (20-30 hand-labeled examples)
 - [ ] `evals/run_eval.py` — one-command harness, precision/recall vs. previous
       prompt version
 - [ ] `docs/COST_MODEL.md` — tokens x volume x frequency, model choice, cost
