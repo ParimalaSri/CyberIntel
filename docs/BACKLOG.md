@@ -147,8 +147,21 @@ measured and versioned, not a black box.
       objective ground truth (no real contact-outcome data exists) - so
       precision/recall measures agreement with that judgment, not
       "correctness" in an absolute sense.
-- [ ] `skills/account-scoring/SKILL.md`
-- [ ] `prompts/account_scoring/v1.md` (+ v2 once we iterate)
+- [x] `skills/account-scoring/SKILL.md` — trigger conditions (band=='review'
+      only), input/output JSON schema, dependent prompt, model-choice
+      rationale (low-volume judgment task -> stronger model, per the
+      take-home's cost-model guidance), tracing requirement, and two
+      worked examples (contrasting `csd.co` skip vs. `welcome italia s.p.a`
+      contact at nearly the same score, to show the decision turns on
+      corroboration, not the number). Notes the org-tier classification
+      idea as a deferred, separate future skill.
+- [x] `prompts/account_scoring/v1.md` — encodes the same corroboration rule
+      used to hand-label the eval set (thin CVE-only signal -> skip; 2+
+      signal types -> contact; strong evidence + unclear/tiny company or
+      ISP-lookalike name -> escalate), so prompt and eval are aligned by
+      construction. 3 few-shot examples anchor the output format and the
+      contact-vs-skip distinction at similar scores. Changelog comment at
+      the top for version history.
 - [ ] Tracing writer (schema in ARCHITECTURE.md) wired into every LLM call
 - [ ] `evals/run_eval.py` — one-command harness, precision/recall vs. previous
       prompt version
