@@ -1,0 +1,31 @@
+{
+  "contact": {
+    "tp": 16,
+    "fp": 5,
+    "fn": 0,
+    "precision": 0.7619047619047619,
+    "recall": 1.0,
+    "f1": 0.8648648648648648
+  },
+  "skip": {
+    "tp": 3,
+    "fp": 0,
+    "fn": 5,
+    "precision": 1.0,
+    "recall": 0.375,
+    "f1": 0.5454545454545454
+  },
+  "escalate": {
+    "tp": 3,
+    "fp": 1,
+    "fn": 1,
+    "precision": 0.75,
+    "recall": 0.75,
+    "f1": 0.75
+  },
+  "overall_accuracy": 0.7857142857142857,
+  "prompt_version": "v1",
+  "model": "openai/gpt-oss-120b",
+  "n_examples": 28,
+  "total_cost_usd": 0.0203
+}
