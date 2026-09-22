@@ -18,6 +18,10 @@ MODEL_PRICING = {
     "claude-sonnet-5": (3.00, 15.00),
     "claude-haiku-4-5-20251001": (0.80, 4.00),
     "claude-opus-5": (15.00, 75.00),
+    # Groq free tier = $0 actual cost. Paid-tier rate shown here for
+    # cost-model realism if usage ever exceeds the free tier - verify
+    # against https://groq.com/pricing before trusting it.
+    "openai/gpt-oss-120b": (0.15, 0.75),
 }
 
 
