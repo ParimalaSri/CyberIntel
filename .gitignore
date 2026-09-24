@@ -26,3 +26,8 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local server logs / sample scratch data
+server_out.log
+server_err.log
+data/samples/

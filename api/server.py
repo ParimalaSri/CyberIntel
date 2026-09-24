@@ -51,7 +51,7 @@ def api_stats():
         GROUP BY 1 ORDER BY 2 DESC LIMIT 8
     """).fetchall()
     top = con.execute(f"""
-        SELECT company_key, primary_country_code, contact_score, band
+        SELECT company_key, primary_country_code, contact_score, band, fit_score, urgency_score
         FROM read_parquet('{ACCOUNTS}') ORDER BY contact_score DESC LIMIT 20
     """).fetchall()
     tiers = con.execute(f"""
@@ -61,7 +61,10 @@ def api_stats():
         "total": total,
         "bands": [{"band": b, "count": n} for b, n in bands],
         "countries": [{"country": c, "count": n} for c, n in countries],
-        "top": [{"company_key": r[0], "country": r[1], "score": r[2], "band": r[3]} for r in top],
+        "top": [
+            {"company_key": r[0], "country": r[1], "score": r[2], "band": r[3], "fit": r[4], "urgency": r[5]}
+            for r in top
+        ],
         "tiers": [{"tier": t, "count": n} for t, n in tiers],
     }
 
