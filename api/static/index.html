@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sales Intelligence Assistant</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 640px; margin: 40px auto; padding: 0 16px; background: #fafafa; }
+  h1 { font-size: 20px; }
+  p.sub { color: #666; font-size: 14px; margin-top: -8px; }
+  #log { border: 1px solid #ddd; border-radius: 8px; background: #fff; padding: 12px; height: 420px; overflow-y: auto; margin-bottom: 12px; }
+  .msg { margin-bottom: 12px; line-height: 1.5; }
+  .msg.user { text-align: right; }
+  .msg.user span { background: #0a7a3d; color: #fff; padding: 6px 12px; border-radius: 12px; display: inline-block; }
+  .msg.bot span { background: #eee; padding: 6px 12px; border-radius: 12px; display: inline-block; white-space: pre-wrap; }
+  form { display: flex; gap: 8px; }
+  input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+  button { padding: 10px 16px; border: none; background: #0a7a3d; color: #fff; border-radius: 6px; cursor: pointer; }
+  button:disabled { opacity: 0.5; }
+</style>
+</head>
+<body>
+  <h1>Sales Intelligence Assistant</h1>
+  <p class="sub">Ask about your prospect list &mdash; e.g. "top 5 companies to contact" or "tell me about goodsrv.de"</p>
+  <div id="log"></div>
+  <form id="f">
+    <input id="q" placeholder="Ask a question..." autocomplete="off">
+    <button id="btn">Ask</button>
+  </form>
+
+<script>
+  const log = document.getElementById('log');
+  const form = document.getElementById('f');
+  const input = document.getElementById('q');
+  const btn = document.getElementById('btn');
+  let history = [];
+
+  function addMsg(role, text) {
+    const div = document.createElement('div');
+    div.className = 'msg ' + role;
+    div.innerHTML = '<span></span>';
+    div.querySelector('span').textContent = text;
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const q = input.value.trim();
+    if (!q) return;
+    addMsg('user', q);
+    history.push({ role: 'user', content: q });
+    input.value = '';
+    btn.disabled = true;
+    addMsg('bot', 'Thinking...');
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: history }),
+      });
+      const data = await res.json();
+      log.lastChild.remove();
+      addMsg('bot', data.answer);
+      history.push({ role: 'assistant', content: data.answer });
+    } catch (err) {
+      log.lastChild.remove();
+      addMsg('bot', 'Something went wrong. Is the server running?');
+    }
+    btn.disabled = false;
+    input.focus();
+  });
+</script>
+</body>
+</html>
