@@ -169,23 +169,46 @@ measured and versioned, not a black box.
       pricing page before real budgeting), `read_traces()` for the eval
       harness to consume. Smoke-tested, not yet wired into a real call -
       that happens when `evals/run_eval.py` makes its first actual API call.
-- [ ] `evals/run_eval.py` — one-command harness, precision/recall vs. previous
-      prompt version
-- [ ] `docs/COST_MODEL.md` — tokens x volume x frequency, model choice, cost
+- [x] `evals/run_eval.py` — one-command harness: calls the model per labeled
+      example via Groq, logs each call through `llm/tracing.py`, reports
+      precision/recall/F1 to `evals/results/eval_report_v1.json`. Found and
+      fixed two real bugs while getting a clean run: (1) gpt-oss reasoning
+      models put chain-of-thought in a separate field and need a much
+      larger `max_tokens` budget, or the final JSON answer gets truncated —
+      this was silently masked by the error-handling fallback also
+      defaulting to `escalate`, making a parsing bug look like model
+      output; (2) Groq free-tier rate limit (8000 TPM) needed
+      retry-with-backoff. Real run: **78.6% accuracy, $0.02 total cost**.
+- [x] `docs/COST_MODEL.md` — tokens x volume x frequency, model choice, cost
       ceiling
 
 ## Sprint 5 — Contact enrichment + API
 **Epic:** As an SDR, I want a name/email for flagged accounts, so I can
 actually send the email.
-- [ ] Hunter.io client, called only for `contact_flag=true` rows
-- [ ] FastAPI: `/accounts`, `/accounts/{id}`, `/accounts/{id}/contact`
+- [x] Contact enrichment client — switched from Hunter.io to Snov.io
+      (Hunter requires a work email to sign up); `pipeline/enrichment/`
+      holds both `hunter_enrich.py` and `snov_enrich.py`. Called only for
+      the top 25 contact-band, domain-tier accounts by score, gated to
+      free-tier quota. Real run: **17/25 contacts found**, including two
+      with real titles (CIO, Linux System Administrator) —
+      `data/gold/contacts.jsonl`.
+- [x] `api/server.py` — FastAPI wrapper (`POST /api/chat`, `GET /` serving
+      `api/static/index.html`). Thin HTTP layer over `app/chatbot.py`'s
+      tool-calling logic, no new AI logic. Endpoints scoped to what the
+      chatbot needs rather than the originally-planned generic
+      `/accounts`, `/accounts/{id}`, `/accounts/{id}/contact` REST surface.
 - [ ] Outreach-draft skill/prompt (optional stretch, same eval pattern)
 
 ## Sprint 6 — Chatbot
 **Epic:** As an SDR, I want to ask "who should I contact today" in plain
 English and get an answer with a name attached.
-- [ ] Tool-calling loop over the Gold API + contact endpoint
-- [ ] Minimal chat UI
+- [x] `app/chatbot.py` — tool-calling loop over the Gold layer
+      (`query_accounts`, `get_account`, `get_contact`) using Groq's
+      `openai/gpt-oss-20b` — a cheap model for a retrieval-only task, per
+      the cost-model guidance that reserves Claude for the judgment-only
+      account-scoring skill.
+- [x] Minimal chat UI — `api/static/index.html`, served by `api/server.py`
+      at `http://localhost:8000`.
 
 ## Sprint 7 — Ship
 - [ ] Deploy/host the app, get a public link

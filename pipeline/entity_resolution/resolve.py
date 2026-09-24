@@ -11,7 +11,6 @@ docs/ARCHITECTURE.md "Entity resolution is heuristic, not ground truth"):
 """
 import os
 import sys
-
 import duckdb
 
 sys.path.insert(0, os.path.dirname(__file__))

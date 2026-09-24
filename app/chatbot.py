@@ -17,8 +17,9 @@ from groq import Groq
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
-ACCOUNTS = r"D:\Cyber_DataSet\data\gold\accounts.parquet"
-CONTACTS = r"D:\Cyber_DataSet\data\gold\contacts.jsonl"
+_ROOT = os.path.join(os.path.dirname(__file__), "..")
+ACCOUNTS = os.path.join(_ROOT, "data", "gold", "accounts.parquet")
+CONTACTS = os.path.join(_ROOT, "data", "gold", "contacts.jsonl")
 MODEL = "openai/gpt-oss-20b"
 
 TOOLS = [
