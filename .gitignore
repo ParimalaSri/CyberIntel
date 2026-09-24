@@ -9,6 +9,10 @@ data/silver/**
 data/gold/**
 !data/**/.gitkeep
 
+# Gold outputs the deployed app reads directly - small enough to ship, no secrets
+!data/gold/accounts.parquet
+!data/gold/contacts.jsonl
+
 # Python
 __pycache__/
 *.pyc

@@ -7,6 +7,7 @@ Usage: python api/server.py, then open http://localhost:8000
 import os
 import sys
 
+import duckdb
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -23,6 +24,8 @@ from groq import Groq  # noqa: E402
 app = FastAPI()
 client = Groq()
 
+ACCOUNTS = chatbot.ACCOUNTS
+
 
 class ChatRequest(BaseModel):
     messages: list[dict]  # full history, [{role, content}, ...] - stateless server
@@ -33,6 +36,30 @@ def api_chat(req: ChatRequest):
     history = [{"role": "system", "content": chatbot.SYSTEM}] + req.messages
     answer = chatbot.chat(client, history)
     return {"answer": answer}
+
+
+@app.get("/api/stats")
+def api_stats():
+    con = duckdb.connect()
+    total = con.execute(f"SELECT count(*) FROM read_parquet('{ACCOUNTS}')").fetchone()[0]
+    bands = con.execute(f"""
+        SELECT band, count(*) FROM read_parquet('{ACCOUNTS}') GROUP BY 1 ORDER BY 2 DESC
+    """).fetchall()
+    countries = con.execute(f"""
+        SELECT primary_country_code, count(*) AS n FROM read_parquet('{ACCOUNTS}')
+        WHERE primary_country_code IS NOT NULL
+        GROUP BY 1 ORDER BY 2 DESC LIMIT 8
+    """).fetchall()
+    top = con.execute(f"""
+        SELECT company_key, primary_country_code, contact_score, band
+        FROM read_parquet('{ACCOUNTS}') ORDER BY contact_score DESC LIMIT 10
+    """).fetchall()
+    return {
+        "total": total,
+        "bands": [{"band": b, "count": n} for b, n in bands],
+        "countries": [{"country": c, "count": n} for c, n in countries],
+        "top": [{"company_key": r[0], "country": r[1], "score": r[2], "band": r[3]} for r in top],
+    }
 
 
 @app.get("/")
