@@ -4,6 +4,7 @@ logic; no new AI logic here, just a thin HTTP wrapper + static page.
 
 Usage: python api/server.py, then open http://localhost:8000
 """
+import json
 import os
 import sys
 
@@ -25,6 +26,21 @@ app = FastAPI()
 client = Groq()
 
 ACCOUNTS = chatbot.ACCOUNTS
+CONTACTS = chatbot.CONTACTS
+
+
+def _load_emails():
+    """company_key -> verified email, from the Snov.io enrichment file (top 25 contact-band accounts only)."""
+    emails = {}
+    if not os.path.exists(CONTACTS):
+        return emails
+    with open(CONTACTS, encoding="utf-8") as f:
+        for line in f:
+            rec = json.loads(line)
+            contact = rec.get("contact")
+            if contact and contact.get("email"):
+                emails[rec["company_key"]] = contact["email"]
+    return emails
 
 
 class ChatRequest(BaseModel):
@@ -50,6 +66,10 @@ def api_stats():
         WHERE primary_country_code IS NOT NULL
         GROUP BY 1 ORDER BY 2 DESC LIMIT 8
     """).fetchall()
+    country_count = con.execute(f"""
+        SELECT count(DISTINCT primary_country_code) FROM read_parquet('{ACCOUNTS}')
+        WHERE primary_country_code IS NOT NULL
+    """).fetchone()[0]
     top = con.execute(f"""
         SELECT company_key, primary_country_code, contact_score, band, fit_score, urgency_score
         FROM read_parquet('{ACCOUNTS}') ORDER BY contact_score DESC LIMIT 20
@@ -57,12 +77,17 @@ def api_stats():
     tiers = con.execute(f"""
         SELECT resolution_tier, count(*) FROM read_parquet('{ACCOUNTS}') GROUP BY 1 ORDER BY 2 DESC
     """).fetchall()
+    emails = _load_emails()
     return {
         "total": total,
+        "country_count": country_count,
         "bands": [{"band": b, "count": n} for b, n in bands],
         "countries": [{"country": c, "count": n} for c, n in countries],
         "top": [
-            {"company_key": r[0], "country": r[1], "score": r[2], "band": r[3], "fit": r[4], "urgency": r[5]}
+            {
+                "company_key": r[0], "country": r[1], "score": r[2], "band": r[3],
+                "fit": r[4], "urgency": r[5], "email": emails.get(r[0]),
+            }
             for r in top
         ],
         "tiers": [{"tier": t, "count": n} for t, n in tiers],
