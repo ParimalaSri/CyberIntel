@@ -34,11 +34,11 @@
   .band.skip { background: #eee; color: #888; }
   .band.exclude { background: #fbe0e0; color: #a33; }
 
-  /* chat widget, bottom-left */
-  #chat-bubble { position: fixed; left: 20px; bottom: 20px; width: 52px; height: 52px; border-radius: 50%;
+  /* chat widget, bottom-right */
+  #chat-bubble { position: fixed; right: 20px; bottom: 20px; width: 52px; height: 52px; border-radius: 50%;
     background: #0a7a3d; color: #fff; display: flex; align-items: center; justify-content: center;
     font-size: 22px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.25); z-index: 100; }
-  #chat-panel { position: fixed; left: 20px; bottom: 84px; width: 320px; height: 420px; background: #fff;
+  #chat-panel { position: fixed; right: 20px; bottom: 84px; width: 360px; height: 460px; background: #fff;
     border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,.2); display: none; flex-direction: column;
     overflow: hidden; z-index: 100; }
   #chat-panel.open { display: flex; }
@@ -47,7 +47,10 @@
   .msg { margin-bottom: 10px; line-height: 1.4; }
   .msg.user { text-align: right; }
   .msg.user span { background: #0a7a3d; color: #fff; padding: 5px 10px; border-radius: 10px; display: inline-block; }
-  .msg.bot span { background: #f0f0f0; padding: 5px 10px; border-radius: 10px; display: inline-block; white-space: pre-wrap; }
+  .msg.bot .bubble { background: #f0f0f0; padding: 6px 10px; border-radius: 10px; display: inline-block; white-space: pre-wrap; max-width: 100%; }
+  .msg.bot table.chat-table { border-collapse: collapse; margin-top: 6px; font-size: 12px; background: #fff; width: 100%; }
+  .msg.bot table.chat-table th, .msg.bot table.chat-table td { border: 1px solid #ddd; padding: 4px 6px; text-align: left; }
+  .msg.bot table.chat-table th { background: #f0f0f0; }
   #chat-form { display: flex; gap: 6px; padding: 8px; border-top: 1px solid #eee; }
   #chat-input { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; }
   #chat-send { padding: 8px 12px; border: none; background: #0a7a3d; color: #fff; border-radius: 6px; cursor: pointer; }
@@ -71,6 +74,17 @@
   <div class="panel">
     <h2>Top countries</h2>
     <div id="country-chart"></div>
+  </div>
+  <div class="panel">
+    <h2>Resolution tier</h2>
+    <div id="tier-chart"></div>
+  </div>
+</div>
+
+<div class="panels">
+  <div class="panel">
+    <h2>Top 20 companies by score</h2>
+    <div id="top20-chart"></div>
   </div>
 </div>
 
@@ -121,6 +135,22 @@
         <div class="val">${c.count.toLocaleString()}</div>
       </div>`).join('');
 
+    const tMax = Math.max(...s.tiers.map(t => t.count));
+    document.getElementById('tier-chart').innerHTML = s.tiers.map(t => `
+      <div class="bar-row">
+        <div class="label">${t.tier}</div>
+        <div class="track"><div class="fill" style="width:${t.count/tMax*100}%"></div></div>
+        <div class="val">${t.count.toLocaleString()}</div>
+      </div>`).join('');
+
+    const top20Max = Math.max(...s.top.map(r => r.score));
+    document.getElementById('top20-chart').innerHTML = s.top.map(r => `
+      <div class="bar-row">
+        <div class="label" title="${r.company_key}">${r.company_key.length > 14 ? r.company_key.slice(0, 13) + '…' : r.company_key}</div>
+        <div class="track"><div class="fill" style="width:${r.score/top20Max*100}%"></div></div>
+        <div class="val">${r.score.toFixed(0)}</div>
+      </div>`).join('');
+
     document.getElementById('top-table').innerHTML = s.top.map(r => `
       <tr>
         <td>${r.company_key}</td>
@@ -144,11 +174,51 @@
     if (chatPanel.classList.contains('open')) chatInput.focus();
   }
 
+  function escapeHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // Converts a Markdown-style pipe table in the bot's reply into a real
+  // <table>; plain lines pass through escaped, since Groq answers often
+  // mix a sentence with a table and textContent showed the raw "| a | b |".
+  function renderBotHtml(text) {
+    const lines = text.split('\n');
+    let html = '';
+    let i = 0;
+    while (i < lines.length) {
+      const line = lines[i].trim();
+      const next = lines[i + 1] ? lines[i + 1].trim() : '';
+      if (line.startsWith('|') && /^\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)+\|?$/.test(next)) {
+        const cells = l => l.replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+        const header = cells(line);
+        let j = i + 2;
+        const rows = [];
+        while (j < lines.length && lines[j].trim().startsWith('|')) {
+          rows.push(cells(lines[j].trim()));
+          j++;
+        }
+        html += '<table class="chat-table"><thead><tr>' +
+          header.map(c => `<th>${escapeHtml(c)}</th>`).join('') + '</tr></thead><tbody>' +
+          rows.map(r => '<tr>' + r.map(c => `<td>${escapeHtml(c)}</td>`).join('') + '</tr>').join('') +
+          '</tbody></table>';
+        i = j;
+      } else {
+        html += escapeHtml(lines[i]) + '\n';
+        i++;
+      }
+    }
+    return html;
+  }
+
   function addMsg(role, text) {
     const div = document.createElement('div');
     div.className = 'msg ' + role;
-    div.innerHTML = '<span></span>';
-    div.querySelector('span').textContent = text;
+    if (role === 'bot') {
+      div.innerHTML = `<div class="bubble">${renderBotHtml(text)}</div>`;
+    } else {
+      div.innerHTML = '<span></span>';
+      div.querySelector('span').textContent = text;
+    }
     chatLog.appendChild(div);
     chatLog.scrollTop = chatLog.scrollHeight;
   }
