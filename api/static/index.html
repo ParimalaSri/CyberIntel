@@ -11,6 +11,11 @@
     --orange: #fb923c; --red: #f87171;
   }
   * { box-sizing: border-box; }
+  * { scrollbar-width: thin; scrollbar-color: #384258 transparent; }
+  *::-webkit-scrollbar { width: 8px; height: 8px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb { background: #384258; border-radius: 8px; }
+  *::-webkit-scrollbar-thumb:hover { background: #4a5570; }
   body {
     margin: 0; background: radial-gradient(circle at 20% 0%, #16203a 0%, var(--bg) 55%);
     color: var(--ink); font-family: system-ui, -apple-system, sans-serif; min-height: 100vh;
