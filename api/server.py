@@ -25,7 +25,7 @@ from groq import Groq  # noqa: E402
 app = FastAPI()
 client = Groq()
 
-ACCOUNTS = chatbot.ACCOUNTS
+GOLD_SQL = chatbot.GOLD_SQL
 CONTACTS = chatbot.CONTACTS
 
 
@@ -57,25 +57,25 @@ def api_chat(req: ChatRequest):
 @app.get("/api/stats")
 def api_stats():
     con = duckdb.connect()
-    total = con.execute(f"SELECT count(*) FROM read_parquet('{ACCOUNTS}')").fetchone()[0]
+    total = con.execute(f"SELECT count(*) FROM {GOLD_SQL}").fetchone()[0]
     bands = con.execute(f"""
-        SELECT band, count(*) FROM read_parquet('{ACCOUNTS}') GROUP BY 1 ORDER BY 2 DESC
+        SELECT final_label, count(*) FROM {GOLD_SQL} GROUP BY 1 ORDER BY 2 DESC
     """).fetchall()
     countries = con.execute(f"""
-        SELECT primary_country_code, count(*) AS n FROM read_parquet('{ACCOUNTS}')
+        SELECT primary_country_code, count(*) AS n FROM {GOLD_SQL}
         WHERE primary_country_code IS NOT NULL
         GROUP BY 1 ORDER BY 2 DESC LIMIT 8
     """).fetchall()
     country_count = con.execute(f"""
-        SELECT count(DISTINCT primary_country_code) FROM read_parquet('{ACCOUNTS}')
+        SELECT count(DISTINCT primary_country_code) FROM {GOLD_SQL}
         WHERE primary_country_code IS NOT NULL
     """).fetchone()[0]
     top = con.execute(f"""
-        SELECT company_key, primary_country_code, contact_score, band, fit_score, urgency_score
-        FROM read_parquet('{ACCOUNTS}') ORDER BY contact_score DESC LIMIT 20
+        SELECT company_key, primary_country_code, contact_score, final_label, fit_score, urgency_score
+        FROM {GOLD_SQL} ORDER BY contact_score DESC LIMIT 20
     """).fetchall()
     tiers = con.execute(f"""
-        SELECT resolution_tier, count(*) FROM read_parquet('{ACCOUNTS}') GROUP BY 1 ORDER BY 2 DESC
+        SELECT resolution_tier, count(*) FROM {GOLD_SQL} GROUP BY 1 ORDER BY 2 DESC
     """).fetchall()
     emails = _load_emails()
     return {

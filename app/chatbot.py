@@ -19,8 +19,17 @@ load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 _ROOT = os.path.join(os.path.dirname(__file__), "..")
 ACCOUNTS = os.path.join(_ROOT, "data", "gold", "accounts.parquet")
+ACCOUNTS_ADJUDICATED = os.path.join(_ROOT, "data", "gold", "accounts_adjudicated.parquet")
 CONTACTS = os.path.join(_ROOT, "data", "gold", "contacts.jsonl")
 MODEL = "openai/gpt-oss-20b"
+
+# final_label is the adjudicated decision (contact/skip/escalate) for review-band
+# accounts and the rule band for everything else - see pipeline/gold/adjudicate.py.
+# Fall back to the rule band alone if adjudication hasn't been run yet.
+if os.path.exists(ACCOUNTS_ADJUDICATED):
+    GOLD_SQL = f"read_parquet('{ACCOUNTS_ADJUDICATED}')"
+else:
+    GOLD_SQL = f"(SELECT *, band AS final_label, NULL AS rationale, NULL AS confidence FROM read_parquet('{ACCOUNTS}'))"
 
 TOOLS = [
     {
@@ -31,7 +40,8 @@ TOOLS = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "band": {"type": "string", "enum": ["contact", "review", "skip", "exclude"]},
+                    "band": {"type": "string", "enum": ["contact", "skip", "escalate", "exclude"],
+                              "description": "final_label after adjudication, not the raw rule band"},
                     "country": {"type": "string", "description": "2-letter country code"},
                     "min_score": {"type": "number"},
                     "limit": {"type": "integer", "default": 10},
@@ -70,15 +80,15 @@ def query_accounts(band=None, country=None, min_score=None, limit=10):
     con = duckdb.connect()
     where = []
     if band:
-        where.append(f"band = '{band}'")
+        where.append(f"final_label = '{band}'")
     if country:
         where.append(f"primary_country_code = '{country.upper()}'")
     if min_score is not None:
         where.append(f"contact_score >= {min_score}")
     clause = f"WHERE {' AND '.join(where)}" if where else ""
     rows = con.execute(f"""
-        SELECT company_key, primary_country_code, contact_score, band
-        FROM read_parquet('{ACCOUNTS}') {clause}
+        SELECT company_key, primary_country_code, contact_score, final_label
+        FROM {GOLD_SQL} {clause}
         ORDER BY contact_score DESC LIMIT {limit}
     """).fetchall()
     return [{"company_key": r[0], "country": r[1], "score": r[2], "band": r[3]} for r in rows]
@@ -87,12 +97,15 @@ def query_accounts(band=None, country=None, min_score=None, limit=10):
 def get_account(company_key):
     con = duckdb.connect()
     row = con.execute(f"""
-        SELECT company_key, primary_country_code, contact_score, band, why
-        FROM read_parquet('{ACCOUNTS}') WHERE company_key = '{company_key}'
+        SELECT company_key, primary_country_code, contact_score, final_label, why, rationale
+        FROM {GOLD_SQL} WHERE company_key = '{company_key}'
     """).fetchone()
     if not row:
         return {"error": "not found"}
-    return {"company_key": row[0], "country": row[1], "score": row[2], "band": row[3], "why": row[4]}
+    return {
+        "company_key": row[0], "country": row[1], "score": row[2], "band": row[3],
+        "why": row[4], "adjudication_rationale": row[5],
+    }
 
 
 def get_contact(company_key):
