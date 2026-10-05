@@ -43,6 +43,7 @@ per_host AS (
         port,
         is_eol_product, is_self_signed, is_honeypot, is_c2,
         is_iot, is_vpn, is_database_tag,
+        has_kev_cve, has_ransomware_cve, ssl_expired, ssl_legacy_tls_enabled,
         screenshot_text,
         coalesce(cardinality(vulns), 0) AS row_cve_count,
         CASE WHEN vulns IS NOT NULL AND cardinality(vulns) > 0
@@ -77,6 +78,11 @@ SELECT
     CAST(coalesce(sum(is_vpn::INT), 0) AS BIGINT) AS vpn_count,
     CAST(coalesce(sum(is_database_tag::INT), 0) AS BIGINT) AS database_tag_count,
     CAST(coalesce(sum(is_risky_port::INT), 0) AS BIGINT) AS risky_open_port_count,
+    -- host-level counts from the Silver kev/ransomware flags and TLS hygiene fields
+    CAST(coalesce(sum(has_kev_cve::INT), 0) AS BIGINT) AS kev_host_count,
+    CAST(coalesce(sum(has_ransomware_cve::INT), 0) AS BIGINT) AS ransomware_host_count,
+    CAST(coalesce(sum(coalesce(ssl_expired, false)::INT), 0) AS BIGINT) AS expired_cert_count,
+    CAST(coalesce(sum(coalesce(ssl_legacy_tls_enabled, false)::INT), 0) AS BIGINT) AS legacy_tls_count,
     count(DISTINCT port) AS distinct_port_count,
     bool_or(screenshot_text IS NOT NULL) AS has_screenshot_evidence,
     max(screenshot_text) AS screenshot_evidence_text

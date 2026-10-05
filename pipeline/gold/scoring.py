@@ -37,6 +37,7 @@ WITH base AS (
         s.cve_count, s.verified_cve_count, s.max_cvss, s.max_epss, s.has_recent_cve,
         s.eol_count, s.self_signed_count, s.honeypot_count, s.c2_count,
         s.risky_open_port_count, s.distinct_port_count, s.database_tag_count,
+        s.kev_host_count, s.ransomware_host_count, s.expired_cert_count, s.legacy_tls_count,
         s.has_screenshot_evidence, s.screenshot_evidence_text
     FROM read_parquet('{COMPANIES_PATH}') c
     JOIN read_parquet('{SIGNALS_PATH}') s
@@ -53,12 +54,22 @@ scored AS (
         AS fit_score,
         -- Urgency (0-100): how exposed are they right now
         (CASE WHEN c2_count > 0 OR has_screenshot_evidence THEN 100 ELSE
+            LEAST(100,
             LEAST(25 * coalesce(max_epss, 0), 25)
             + (CASE WHEN has_recent_cve THEN 10 ELSE 0 END)
             + (CASE WHEN verified_cve_count > 0 THEN 10 ELSE 0 END)
             + (CASE WHEN eol_count > 0 THEN 15 ELSE 0 END)
             + (CASE WHEN self_signed_count > 0 THEN 10 ELSE 0 END)
             + (CASE WHEN risky_open_port_count > 0 THEN 20 ELSE 0 END)
+            -- known-exploited / ransomware CVEs outrank a plain high-EPSS CVE.
+            -- Scaled by the share of the account's hosts affected (full points at
+            -- 25%+), so a large ISP/hosting network with one affected host among
+            -- hundreds doesn't score like a company whose estate is mostly exposed.
+            + round(15 * LEAST(kev_host_count * 1.0 / host_count / 0.25, 1))
+            + round(10 * LEAST(ransomware_host_count * 1.0 / host_count / 0.25, 1))
+            + (CASE WHEN expired_cert_count > 0 THEN 5 ELSE 0 END)
+            + (CASE WHEN legacy_tls_count > 0 THEN 5 ELSE 0 END)
+            )
         END) AS urgency_score
     FROM base
 ),
@@ -94,6 +105,14 @@ SELECT *,
         CASE WHEN risky_open_port_count > 0 THEN
             risky_open_port_count || ' host(s) with a high-risk port exposed (VNC/RDP/MSSQL/Telnet/FTP/MongoDB/Redis/Elasticsearch)'
         ELSE NULL END,
+        CASE WHEN kev_host_count > 0 THEN
+            kev_host_count || ' host(s) with a CISA known-exploited (KEV) vulnerability'
+        ELSE NULL END,
+        CASE WHEN ransomware_host_count > 0 THEN
+            ransomware_host_count || ' host(s) with a CVE used in known ransomware campaigns'
+        ELSE NULL END,
+        CASE WHEN expired_cert_count > 0 THEN expired_cert_count || ' host(s) serving an expired TLS certificate' ELSE NULL END,
+        CASE WHEN legacy_tls_count > 0 THEN legacy_tls_count || ' host(s) still accepting legacy TLS/SSL (SSLv2/3, TLS 1.0/1.1)' ELSE NULL END,
         CASE WHEN c2_count > 0 THEN 'Possible active compromise: ' || c2_count || ' host(s) flagged for C2 activity' ELSE NULL END,
         CASE WHEN database_tag_count > 0 THEN database_tag_count || ' exposed database service(s)' ELSE NULL END,
         CASE WHEN honeypot_count > 0 THEN 'Excluded: honeypot tag present (not a real production asset)' ELSE NULL END,
