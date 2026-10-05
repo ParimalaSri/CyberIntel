@@ -1,0 +1,70 @@
+﻿field,check,source,rows_in_scope_before,violations_before,pct_before,remediation_or_note,rows_in_scope_after,violations_after,pct_after,status
+ip_str,Not null,Excel,8914693,0,0.0,Rows quarantined (excluded). Cause: IPv6 hosts - source 'ipv6' field is not loaded; loading it into ip_str would recover them.,8914693,0,0.0,Pass
+ip_str,"Valid IPv4 (4 octets, each 0-255) or IPv6 (contains ':')",Excel,8914693,0,0.0,None needed,8914693,0,0.0,Pass
+ip_str,No leading/trailing spaces,Excel,8914693,0,0.0,trim,8914693,0,0.0,Pass
+port,Not null,Excel,8914693,0,0.0,None needed,8914693,0,0.0,Pass
+port,Integer 1-65535,Excel,8914693,0,0.0,None needed,8914693,0,0.0,Pass
+transport,Not null,Excel,8914693,0,0.0,None needed,8914693,0,0.0,Pass
+transport,Allowed values tcp/udp,Excel,8914693,0,0.0,None needed,8914693,0,0.0,Pass
+transport,Lowercase,Excel,8914693,0,0.0,lower(),8914693,0,0.0,Pass
+ts,Not null / parseable timestamp,Excel,8914693,0,0.0,None needed,8914693,0,0.0,Pass
+ts,Not in the future,Excel,8914693,0,0.0,None needed,8914693,0,0.0,Pass
+hostnames,Empty list stored as [] instead of NULL,Excel,8914693,0,0.0,Empty list -> NULL,8914693,0,0.0,Pass
+hostnames,Lowercase,Added,6566466,0,0.0,lower(),6566466,0,0.0,Pass
+hostnames,No scheme (http://) or path (/),Added,6566466,0,0.0,Strip scheme; drop entries that still contain a path,6566466,0,0.0,Pass
+domains,Empty exactly when hostnames is empty,Excel,8914693,134,0.002,None needed,8914693,134,0.002,Partly fixed
+domains,Lowercase,Excel,6566336,0,0.0,lower(),6566336,0,0.0,Pass
+domains,No scheme or path,Excel,6566336,0,0.0,Strip scheme; drop entries that still contain a path,6566336,0,0.0,Pass
+domains,Each domain is contained in a hostname,Excel,6566336,11631,0.177,Flag only: Shodan emits partial labels like 'home.' / 'dynamic.'; not a safe auto-fix,6566336,11631,0.177,"Open - flagged, not auto-fixed"
+org,Not null,Excel,8914693,17503,0.196,None possible (value unknown),8914693,17503,0.196,"Open - flagged, not auto-fixed"
+org,"Trimmed, no empty string",Excel,8897190,0,0.0,trim + ''->NULL,8897190,0,0.0,Pass
+isp,"Trimmed, no empty string",Excel,8150509,0,0.0,trim + ''->NULL,8150509,0,0.0,Pass
+isp / asn,Null together (isp null iff asn null),Excel,8914693,0,0.0,None needed,8914693,0,0.0,Pass
+asn,Pattern 'AS' + digits,Excel,8150509,0,0.0,upper() + trim,8150509,0,0.0,Pass
+os,"Trimmed, no empty string",Added,200915,0,0.0,trim + ''->NULL,200915,0,0.0,Pass
+product,"Trimmed, no empty string",Excel,1562990,0,0.0,trim + ''->NULL,1562990,0,0.0,Pass
+product_version,"Trimmed, no empty string",Excel,514150,0,0.0,trim + ''->NULL,514150,0,0.0,Pass
+devicetype,"Trimmed, no empty string",Excel,5612,0,0.0,trim + ''->NULL,5612,0,0.0,Pass
+tags,Empty list stored instead of NULL,Excel,8914693,0,0.0,Empty list -> NULL,8914693,0,0.0,Pass
+is_* flags (7),Boolean flags never NULL,Added,8914693,0,0.0,"NULL -> false (list_contains(NULL, ..) returned NULL when tags was NULL)",8914693,0,0.0,Pass
+tags / cloud,'cloud' tag implies cloud_provider populated,Excel,3464098,93,0.003,Flag only,3464098,93,0.003,"Open - flagged, not auto-fixed"
+cpe23,Every element starts with 'cpe:2.3:',Excel,1979485,0,0.0,None needed,1979485,0,0.0,Pass
+cpe23,Empty list stored instead of NULL,Excel,8914693,0,0.0,Empty list -> NULL,8914693,0,0.0,Pass
+vulns,CVE keys valid (CVE-yyyy-nnnn or MS bulletin),Added,253096,0,0.0,Drop malformed keys,253096,0,0.0,Pass
+vulns,CVSS within 0-10,Added,253096,0,0.0,None needed,253096,0,0.0,Pass
+vulns,EPSS within 0-1,Added,253096,0,0.0,None needed,253096,0,0.0,Pass
+vulns,Empty map stored instead of NULL,Excel,8914693,0,0.0,Empty map -> NULL,8914693,0,0.0,Pass
+country_code,Not null,Excel,8914693,1197,0.013,None possible (value unknown),8914693,1197,0.013,"Open - flagged, not auto-fixed"
+country_code,Exactly 2 uppercase letters,Excel,8913496,0,0.0,upper() + trim,8913496,0,0.0,Pass
+country_name,"Trimmed, no empty string",Excel,8913309,0,0.0,trim + ''->NULL,8913309,0,0.0,Pass
+city,"Trimmed, no empty string",Excel,8913496,0,0.0,trim + ''->NULL,8913496,0,0.0,Pass
+latitude,Between -90 and 90,Excel,8913496,0,0.0,None needed,8913496,0,0.0,Pass
+longitude,Between -180 and 180,Excel,8913496,0,0.0,None needed,8913496,0,0.0,Pass
+region_code,No empty string (normalise '' to NULL),Excel,8789338,0,0.0,trim + ''->NULL,8789338,0,0.0,Pass
+cloud_provider,"Trimmed, no empty string",Added,3464005,0,0.0,trim + ''->NULL,3464005,0,0.0,Pass
+ssl_jarm,62 lowercase hex characters,Added,814087,0,0.0,None needed,814087,0,0.0,Pass
+ssl_expired / ssl_expires,expired flag agrees with expiry date vs scan time,Added,814086,0,0.0,None needed,814086,0,0.0,Pass
+ssl_subject_cn / org,"Trimmed, no empty string",Added,804922,0,0.0,trim + ''->NULL,804922,0,0.0,Pass
+http_status,Integer 100-599,Excel,2695639,0,0.0,Out-of-range -> NULL,2695639,0,0.0,Pass
+http_server,"Trimmed, no empty string",Excel,1901604,0,0.0,trim + ''->NULL,1901604,0,0.0,Pass
+http_title,"Trimmed, no empty string",Excel,1742071,0,0.0,trim + ''->NULL,1742071,0,0.0,Pass
+shodan_module,Not null,Excel,8914693,0,0.0,None needed,8914693,0,0.0,Pass
+screenshot_labels,Non-empty list when present,Excel,1076,0,0.0,Empty list -> NULL,1076,0,0.0,Pass
+screenshot_text,"Trimmed, no empty string",Added,809,0,0.0,trim + ''->NULL,809,0,0.0,Pass
+ip_str + port + ts,No duplicate observation rows,Excel,8914693,0,0.0,Duplicates were all rows with NULL ip_str colliding; removed with the quarantine,8914693,0,0.0,Pass
+country_code / country_name,"1:1 mapping (one name per code, one code per name)",Excel,8914693,0,0.0,None needed,8914693,0,0.0,Pass
+ip,ip equals integer form of ip_str,Excel,,,,Field not loaded into Silver (numeric duplicate of ip_str),,,,Not run
+hash / data,hash = 0 exactly when data is null,Excel,,,,Neither field loaded (banner dropped; hash is engineering-only),,,,Not run
+cpe / cpe23_hash,cpe23 null iff cpe null; hash null iff cpe23 null,Excel,,,,cpe (deprecated) and cpe23_hash not loaded,,,,Not run
+http.status vs data,http.status matches first line of data banner,Excel,,,,Raw banner 'data' not loaded,,,,Not run
+_shodan.id,Unique per row; 36 chars with 4 hyphens,Excel,,,,Sub-field not loaded (internal metadata),,,,Not run
+_shodan.crawler,40 hex characters,Excel,,,,Sub-field not loaded,,,,Not run
+_shodan.region / ptr / options,'' -> NULL; ptr TRUE/NULL; options = {},Excel,,,,Sub-fields not loaded,,,,Not run
+http.host,Equals ip_str,Excel,,,,Sub-field not loaded,,,,Not run
+http.headers,Keys lowercase,Excel,,,,Sub-field not loaded (dropped as bulky),,,,Not run
+http.html + *_hash,'' vs NULL consistency; hash 0.0 when html empty,Excel,,,,html and hashes not loaded (see dropped_fields.csv),,,,Not run
+title / html (top-level),Deprecated top-level fields vs http.title/html,Excel,,,,Deprecated; not loaded,,,,Not run
+screenshot.mime / data,mime starts with 'image/',Excel,,,,Sub-fields not loaded; labels and text only,,,,Not run
+location.area_code / postal_code / dma_code,100% null - confirm on larger data,Excel,,,,Not loaded; profile shows no value to keep,,,,Not run
+any text cell,"Cell exceeds Excel 32,767 chars",Excel,,,,"Not applicable: Silver is parquet in DuckDB, not Excel",,,,Not run
+"os, version, devicetype, ssl, vulns",Only % null and type checks defined,Excel,,,,Covered by the null profile and type checks above,,,,Not run

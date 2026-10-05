@@ -1,0 +1,150 @@
+﻿level,field,status,populated_pct_in_sample,reason_dropped,est_raw_size_gb,pct_of_raw_file
+sub-field,http.html,dropped,29.17,"Full page HTML; by far the largest raw field. Title/server/components already extracted, so the body is not needed for scoring.",37.463,44.279
+sub-field,vulns.<CVE>.references,dropped,(per-CVE),"Per-CVE list of advisory/reference URLs; very large and repeated for every CVE on every host. CVE id, CVSS, EPSS and summary are kept instead.",17.171,20.294
+sub-field,http.favicon,dropped,4.75,Favicon image/hash payload; large and not needed for scoring.,7.159,8.462
+sub-field,ssl.chain,dropped,8.92,"Full PEM certificate chain; large, not needed (subject/issuer extracted from cert).",3.32,3.924
+sub-field,ssl.cert,partially dropped,8.92,"PARTIAL: only subject CN/O, issuer CN/O, expiry, expired flag and sig_alg are kept; extensions, fingerprints, serial and the rest are dropped. Size shown is the whole cert field (upper bound for the dropped part).",1.644,1.944
+top-level,data,dropped,45.03,"Raw banner text; large, unstructured, and mostly redundant with parsed fields (product/version/http). Kept out of Silver; could be mined later for product/version.",1.557,1.841
+sub-field,http.headers,dropped,32.37,Raw HTTP headers; bulky. server and WAF are extracted separately.,0.944,1.116
+sub-field,screenshot.data,dropped,0.01,Base64 screenshot image; very large; labels and OCR text are kept instead.,0.544,0.643
+sub-field,_shodan.crawler,dropped,100.0,Internal crawler ID; collection metadata only.,0.4,0.473
+sub-field,_shodan.id,dropped,100.0,Internal record UUID; collection metadata only.,0.332,0.393
+sub-field,http.sitemap,dropped,0.36,"Raw sitemap content; large, low value.",0.315,0.373
+sub-field,ssl.handshake_states,dropped,8.63,TLS handshake trace; engineering-only.,0.242,0.286
+sub-field,http.redirects,dropped,1.7,Redirect chain details; low value.,0.201,0.237
+top-level,opts,dropped,12.9,Experimental raw data (hex) with no stable business meaning.,0.176,0.208
+sub-field,_shodan.options,dropped,11.36,Internal collection options; metadata only.,0.138,0.163
+sub-field,ssl.chain_sha256,dropped,8.92,Fingerprints of chain certs; engineering-only.,0.136,0.16
+sub-field,location.area_code,dropped,0.0,Telephone area code; mostly null and not useful.,0.128,0.152
+top-level,ip,dropped,99.38,Numeric duplicate of ip_str; no extra information.,0.117,0.138
+sub-field,http.robots,dropped,1.93,Raw robots.txt content; low value.,0.11,0.13
+sub-field,_shodan.region,dropped,98.25,Shodan crawler region; metadata only.,0.105,0.125
+top-level,hash,dropped,100.0,"Numeric banner hash for grouping identical banners; engineering-only, no business meaning.",0.099,0.116
+top-level,cpe,dropped,23.16,Deprecated older format of cpe23; cpe23 is kept instead.,0.081,0.096
+sub-field,_shodan.ptr,dropped,83.67,Reverse-DNS flag for the crawl; metadata only.,0.069,0.082
+sub-field,http.host,dropped,33.29,Declared in the schema but not projected into Silver; hostnames/domains give host identity.,0.069,0.081
+sub-field,http.headers_hash,dropped,33.29,Numeric content hash for grouping; engineering-only.,0.065,0.077
+sub-field,http.securitytxt_hash,dropped,0.13,Numeric content hash for grouping; engineering-only.,0.06,0.071
+sub-field,ssl.tlsext,dropped,6.05,TLS extension list; low value.,0.06,0.07
+sub-field,http.server_hash,dropped,23.96,Numeric content hash for grouping; engineering-only.,0.058,0.069
+sub-field,http.components_hash,dropped,27.56,Numeric content hash for grouping; engineering-only.,0.056,0.066
+top-level,ssh,dropped,0.56,Service struct (SSH keys/algorithms); sparse; exposure inferred from port instead.,0.056,0.066
+sub-field,http.title_hash,dropped,22.44,Numeric content hash for grouping; engineering-only.,0.055,0.065
+sub-field,http.html_hash,dropped,33.29,Numeric content hash for grouping; engineering-only.,0.055,0.065
+sub-field,http.dom_hash,dropped,33.29,Numeric content hash for grouping; engineering-only.,0.053,0.063
+sub-field,http.securitytxt,dropped,0.13,security.txt content; sparse (<0.2%).,0.051,0.06
+sub-field,http.sitemap_hash,dropped,0.36,Numeric content hash for grouping; engineering-only.,0.05,0.06
+sub-field,ssl.cipher,dropped,8.92,Negotiated cipher detail; low value vs ssl.versions.,0.05,0.06
+sub-field,http.robots_hash,dropped,1.93,Numeric content hash for grouping; engineering-only.,0.049,0.058
+sub-field,ssl.acceptable_cas,dropped,0.17,Client-cert CA list; sparse.,0.04,0.048
+sub-field,http.location,dropped,33.29,Redirect location header; low value.,0.04,0.047
+top-level,msrpc,dropped,0.02,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.039,0.046
+top-level,cpe23_hash,dropped,20.9,Numeric software fingerprint hash; engineering-only.,0.038,0.045
+sub-field,ssl.trust,dropped,8.92,Trust-store validation detail; low value.,0.03,0.035
+sub-field,ssl.ja3s,dropped,8.71,TLS server fingerprint; engineering-only (jarm kept).,0.028,0.033
+sub-field,ssl.ocsp,dropped,0.29,OCSP response; sparse.,0.017,0.021
+top-level,info,dropped,3.16,Free text with no standard format; sparsely populated.,0.008,0.009
+sub-field,ssl.alpn,dropped,0.5,ALPN protocols; low value.,0.007,0.009
+top-level,snmp,dropped,0.38,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.006,0.007
+top-level,open_dir,dropped,0.04,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.004,0.005
+top-level,hikvision,dropped,0.16,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.004,0.005
+top-level,ftp,dropped,0.1,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.004,0.004
+top-level,node_exporter,dropped,0.03,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.003,0.004
+top-level,smb,dropped,0.01,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.003,0.004
+top-level,ntp,dropped,0.13,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.003,0.003
+top-level,ipv6,dropped,0.62,Rarely populated; IPv4 ip_str already identifies the host.,0.002,0.002
+top-level,dns,dropped,0.22,DNS resolver details; sparsely populated and weak link to a buying signal.,0.002,0.002
+top-level,isakmp,dropped,0.05,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.002,0.002
+top-level,ntlm,dropped,0.07,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.002,0.002
+top-level,elastic,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.001,0.002
+top-level,html,dropped,0.01,Deprecated top-level field; http.html is the current location (also dropped).,0.001,0.002
+top-level,redis,dropped,0.01,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.001,0.002
+top-level,minecraft,dropped,0.01,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.001,0.002
+top-level,mikrotik_winbox,dropped,0.02,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.001,0.001
+top-level,mac,dropped,0.3,MAC vendor lookup of local network address; little value for choosing company targets.,0.001,0.001
+top-level,dahua_dvr_web,dropped,0.06,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.001,0.001
+top-level,netbios,dropped,0.01,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.001,0.001
+top-level,mysql,dropped,0.06,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.001,0.001
+top-level,mqtt,dropped,0.01,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.001,0.001
+top-level,mongodb,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.001,0.001
+top-level,rdp_encryption,dropped,0.05,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.001,0.001
+sub-field,dns.resolver_hostname,dropped,0.06,Not needed for scoring or entity resolution.,0.0,0.001
+sub-field,dns.software,dropped,0.09,Not needed for scoring or entity resolution.,0.0,0.001
+sub-field,http.identifiers,dropped,0.1,Rare identifiers; sparse.,0.0,0.001
+sub-field,dns.resolver_id,dropped,0.04,Not needed for scoring or entity resolution.,0.0,0.0
+top-level,telnet,dropped,0.05,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,upnp,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+sub-field,dns.recursive,dropped,0.22,Not needed for scoring or entity resolution.,0.0,0.0
+top-level,kubernetes,dropped,0.03,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,ldap,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,hp_ilo,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,pptp,dropped,0.05,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,mdns,dropped,0.01,Local-network discovery protocol; mostly consumer/home devices.,0.0,0.0
+top-level,mikrotik_routeros,dropped,0.02,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,mcp,dropped,0.02,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,trane_tracer_sc,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,cisco_ipsla,dropped,0.03,Network performance-measurement responder; little link to cybersecurity purchase intent.,0.0,0.0
+top-level,ethereum_p2p,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,amqp,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,vnc,dropped,0.05,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,plex,dropped,0.02,Consumer media server; not a business cybersecurity signal.,0.0,0.0
+top-level,mysqlx,dropped,0.01,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,hermes_agent,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,fortinet,dropped,0.01,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,influxdb,dropped,0.01,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,bgp,dropped,0.01,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,microsoft_exchange,dropped,0.01,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,spotify_connect,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,ip_camera,dropped,0.01,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,airplay,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,synology_dsm,dropped,0.02,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,dav,dropped,0.01,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,afp,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,draytek_vigor,dropped,0.01,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,skywalking,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,rsync,dropped,0.01,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,qnap,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,philips_hue,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,vendor,dropped,0.02,Rare vendor metadata; no stable scoring use.,0.0,0.0
+sub-field,location.country_code3,dropped,0.0,Duplicate of country_code.,0.0,0.0
+top-level,mssql_ssrp,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+sub-field,location.postal_code,dropped,0.0,Postal code; sparse and not used.,0.0,0.0
+top-level,device,dropped,0.01,Rare device metadata; no stable scoring use.,0.0,0.0
+sub-field,screenshot.mime,dropped,0.01,Not needed for scoring or entity resolution.,0.0,0.0
+top-level,chromecast,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+sub-field,screenshot.hash,dropped,0.01,Not needed for scoring or entity resolution.,0.0,0.0
+sub-field,location.dma_code,dropped,0.0,US marketing-area code; not used.,0.0,0.0
+top-level,stun,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,dahua,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,steam_a2s,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,clickhouse,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,oracle_tnslsnr,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,bacnet,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,ntrip,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,coap,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,zeromq,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,ipmi,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,cisco_anyconnect,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,ipp_cups,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,tilginAB_home_gateway,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,fast_reverse_proxy,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,platform,dropped,0.0,Rare platform metadata; no stable scoring use.,0.0,0.0
+top-level,title,dropped,0.0,Deprecated top-level field; http.title is used instead.,0.0,0.0
+top-level,checkpoint,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,h323,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,pgbouncer,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,ubiquiti,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,tp_link_kasa_new,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,openflow,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,samsung_syncthru_web_service,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,epmd,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,netusb,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,docker_registry,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,synology_srm,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,sonicwall,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,sony_bravia,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,homematic_ccu,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,superset,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,xiaomi_miio,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,dogecoin_node,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
+top-level,milesight_routers,dropped,0.0,"Device/service-specific struct; populated in <0.1% of records. Exposure is already inferred from port/tags/vulns. Could be revisited as a single derived ""exposed risky service"" flag.",0.0,0.0
