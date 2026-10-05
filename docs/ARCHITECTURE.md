@@ -146,10 +146,25 @@ SECURITY SIGNALS      (fit inputs folded directly into scoring.py -
 
 ## Tracing schema (every LLM call)
 
-JSONL, one line per call, in `evals/results/traces.jsonl`:
+JSONL, one line per call, in `evals/results/traces.jsonl` (writer:
+[llm/tracing.py](../llm/tracing.py); summary: `python llm/report.py`).
+Schema v2 - old v1 lines are still readable, `read_traces()` fills the new
+fields in:
 
 ```json
-{"ts": "...", "call_id": "...", "skill": "account-scoring", "prompt_version": "v1",
- "model": "...", "input_tokens": 0, "output_tokens": 0, "latency_ms": 0,
- "cost_usd": 0.0, "request": {...}, "response": {...}, "decision": "contact|skip|unsure"}
+{"schema_version": 2, "ts": "...", "call_id": "...", "run_id": "20261005T154400-ab12cd",
+ "skill": "account-scoring", "prompt_version": "v1", "prompt_hash": "9f2c1a7e04bb",
+ "model": "openai/gpt-oss-120b",
+ "status": "ok | parse_error | error | rate_limited", "error": null, "attempts": 1,
+ "input_tokens": 0, "output_tokens": 0, "latency_ms": 0,
+ "cost_usd": 0.0, "billing_tier": "free | paid | unknown", "input_hash": "...",
+ "request": {...}, "response": {...}, "decision": "contact|skip|escalate|null"}
 ```
+
+- `status != ok` means the call produced no usable decision (`decision` is
+  `null` for failures); it must not be counted as a real `escalate`.
+- `cost_usd` is a **list-price estimate**, not a bill. It is a real charge only
+  when `billing_tier` is `paid` (set via the `LLM_BILLING_TIER` env var).
+- `prompt_hash` identifies the exact prompt text used; `input_hash` the exact
+  request; `run_id` groups the calls of one batch or eval run.
+
