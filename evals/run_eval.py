@@ -16,21 +16,15 @@ import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from dotenv import load_dotenv  # noqa: E402
-from llm.tracing import log_trace  # noqa: E402
+from llm import prompts  # noqa: E402
+from llm.tracing import log_trace, new_run_id  # noqa: E402
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 LABELED_SET = os.path.join(os.path.dirname(__file__), "account_scoring", "labeled_set.jsonl")
-PROMPT_DIR = os.path.join(os.path.dirname(__file__), "..", "prompts", "account_scoring")
 RESULTS_DIR = os.path.join(os.path.dirname(__file__), "results")
 MODEL = "openai/gpt-oss-120b"  # via Groq (free tier, no card required)
 LABELS = ["contact", "skip", "escalate"]
-
-
-def load_prompt(version: str) -> str:
-    path = os.path.join(PROMPT_DIR, f"{version}.md")
-    with open(path, encoding="utf-8") as f:
-        return f.read()
 
 
 def load_examples() -> list[dict]:
@@ -102,11 +96,15 @@ def main():
     from groq import Groq
     client = Groq()
 
-    prompt_template = load_prompt(args.prompt_version)
+    prompt = prompts.load("account-scoring", args.prompt_version)
+    prompt_template = prompt.text
+    run_id = new_run_id()
     examples = load_examples()
-    print(f"Running {len(examples)} examples against prompt {args.prompt_version} ({MODEL})...")
+    print(f"Running {len(examples)} examples against prompt {args.prompt_version} "
+          f"[hash {prompt.hash}] ({MODEL}), run {run_id}...")
 
     predictions, expected, total_cost = [], [], 0.0
+    per_example = []
     for ex in examples:
         parsed, usage, latency_ms = call_model(client, prompt_template, ex["input"])
         label = parsed.get("label", "escalate")
@@ -122,13 +120,20 @@ def main():
             output_tokens=usage["output_tokens"],
             latency_ms=latency_ms,
             decision=label,
+            run_id=run_id,
+            prompt_hash=prompt.hash,
         )
         total_cost += rec["cost_usd"]
+        per_example.append({"id": ex.get("id"), "company_key": ex["company_key"],
+                            "expected": ex["expected_label"], "predicted": label})
         match = "OK" if label == ex["expected_label"] else "MISS"
         print(f"  [{match}] {ex['company_key']:35s} expected={ex['expected_label']:9s} got={label}")
 
     report = score(predictions, expected)
     report["prompt_version"] = args.prompt_version
+    report["prompt_hash"] = prompt.hash
+    report["run_id"] = run_id
+    report["predictions"] = per_example
     report["model"] = MODEL
     report["n_examples"] = len(examples)
     report["total_cost_usd"] = round(total_cost, 4)

@@ -23,13 +23,16 @@ import time
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from dotenv import load_dotenv  # noqa: E402
 import duckdb  # noqa: E402
-from llm.tracing import log_trace  # noqa: E402
+from llm import prompts  # noqa: E402
+from llm.tracing import log_trace, new_run_id  # noqa: E402
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
 
 ACCOUNTS_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "data", "gold", "accounts.parquet")
 OUT_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "data", "gold", "accounts_adjudicated.parquet")
-PROMPT_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "prompts", "account_scoring", "v1.md")
+# Pinned on purpose: a new prompt version is promoted by changing this (or passing
+# --prompt-version) after it beats the current one in evals/compare_prompts.py.
+DEFAULT_PROMPT_VERSION = "v1"
 MODEL = "openai/gpt-oss-120b"  # same judgment model evals/run_eval.py validated this prompt against
 
 INPUT_FIELDS = [
@@ -38,11 +41,6 @@ INPUT_FIELDS = [
     "max_epss", "eol_count", "self_signed_count", "risky_open_port_count",
     "c2_count", "has_screenshot_evidence", "why",
 ]
-
-
-def load_prompt() -> str:
-    with open(PROMPT_PATH, encoding="utf-8") as f:
-        return f.read()
 
 
 def call_model(client, prompt_template: str, account_input: dict) -> tuple[dict, dict, float]:
@@ -79,6 +77,8 @@ def call_model(client, prompt_template: str, account_input: dict) -> tuple[dict,
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--sample", type=int, default=None, help="Adjudicate only N review-band rows (for testing)")
+    ap.add_argument("--prompt-version", default=DEFAULT_PROMPT_VERSION,
+                    help="prompt version under prompts/account_scoring/ (default: %(default)s)")
     args = ap.parse_args()
 
     if not os.environ.get("GROQ_API_KEY"):
@@ -95,9 +95,12 @@ def main():
         {f"ORDER BY random() LIMIT {args.sample}" if args.sample else ""}
     """).fetchall()
     columns = [d[0] for d in con.description]
-    prompt_template = load_prompt()
+    prompt = prompts.load("account-scoring", args.prompt_version)
+    prompt_template = prompt.text
+    run_id = new_run_id()
 
-    print(f"Adjudicating {len(review_rows)} review-band accounts ({MODEL})...")
+    print(f"Adjudicating {len(review_rows)} review-band accounts "
+          f"(prompt {prompt.version} [{prompt.hash}], {MODEL}, run {run_id})...")
     results = []
     total_cost = 0.0
     for row in review_rows:
@@ -106,7 +109,7 @@ def main():
         label = parsed.get("label", "escalate")
         rec = log_trace(
             skill="account-scoring",
-            prompt_version="v1",
+            prompt_version=prompt.version,
             model=MODEL,
             request={"company_key": account_input["company_key"], "input": account_input},
             response=parsed,
@@ -114,6 +117,8 @@ def main():
             output_tokens=usage["output_tokens"],
             latency_ms=latency_ms,
             decision=label,
+            run_id=run_id,
+            prompt_hash=prompt.hash,
         )
         total_cost += rec["cost_usd"]
         results.append({
