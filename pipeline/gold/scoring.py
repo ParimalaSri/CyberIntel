@@ -20,6 +20,26 @@ OUT_PATH = os.path.join(OUT_DIR, "accounts.parquet")
 TARGET_COUNTRIES = {"US", "GB", "CA", "DE", "FR", "AU", "NL", "SE", "CH", "SG", "JP"}
 TARGET_COUNTRIES_SQL = ", ".join(f"'{c}'" for c in sorted(TARGET_COUNTRIES))
 
+# Network providers (ISPs, telecoms, hosting/VPS/CDN, dynamic DNS) aggregate many
+# unrelated customers' machines under one name, so exposure on those hosts is
+# the customers', not the provider's. Matched against org + isp + company key.
+# Only applied to accounts with MIN_HOSTS_FOR_PROVIDER_FLAG+ hosts so a small
+# business with "network" in its name is not excluded.
+NETWORK_PROVIDER_KEYWORDS = sorted({
+    "telecom", "telekom", "telefon", "tele2", "telia", "telenor", "telus", "telenet",
+    "communications", "broadband", "cable", "fiber", "fibre", "internet", "isp",
+    "wireless", "mobile", "vodafone", "orange", "kddi", "ntt", "softbank", "biglobe",
+    "starlink", "bahnhof", "hosting", "vps", "server", "datacenter", "data center",
+    "dedicated", "cloud", "cdn", "amazonaws", "colocation", "ix ", "dyndns", "duckdns",
+    # generic stems that catch most remaining providers without a brand list
+    "host", "tele", "comunic", "srv", "network", "technology services",
+})
+MIN_HOSTS_FOR_PROVIDER_FLAG = 50
+# A single business rarely spans this many ASNs; dynamic-DNS / proxy networks do.
+MAX_ASN_FOR_SINGLE_BUSINESS = 20
+PROVIDER_HAYSTACK = "lower(coalesce(primary_org, '') || ' ' || coalesce(primary_isp, '') || ' ' || company_key)"
+NETWORK_PROVIDER_SQL = " OR ".join(f"{PROVIDER_HAYSTACK} LIKE '%{k}%'" for k in NETWORK_PROVIDER_KEYWORDS)
+
 SQL = f"""
 WITH base AS (
     SELECT
@@ -45,6 +65,8 @@ WITH base AS (
 ),
 scored AS (
     SELECT *,
+        ((host_count >= {MIN_HOSTS_FOR_PROVIDER_FLAG} AND ({NETWORK_PROVIDER_SQL}))
+         OR asn_count >= {MAX_ASN_FOR_SINGLE_BUSINESS}) AS is_network_provider,
         -- Fit (0-100): is this the right kind of customer
         (CASE WHEN resolution_tier = 'domain' THEN 40 ELSE 0 END)
         + (CASE WHEN likely_infra_or_proxy THEN 0
@@ -80,7 +102,7 @@ final AS (
 )
 SELECT *,
     CASE
-        WHEN honeypot_count > 0 OR likely_infra_or_proxy THEN 'exclude'
+        WHEN honeypot_count > 0 OR likely_infra_or_proxy OR is_network_provider THEN 'exclude'
         WHEN contact_score >= 85 THEN 'contact'
         WHEN contact_score >= 50 THEN 'review'
         ELSE 'skip'
@@ -116,7 +138,8 @@ SELECT *,
         CASE WHEN c2_count > 0 THEN 'Possible active compromise: ' || c2_count || ' host(s) flagged for C2 activity' ELSE NULL END,
         CASE WHEN database_tag_count > 0 THEN database_tag_count || ' exposed database service(s)' ELSE NULL END,
         CASE WHEN honeypot_count > 0 THEN 'Excluded: honeypot tag present (not a real production asset)' ELSE NULL END,
-        CASE WHEN likely_infra_or_proxy THEN 'Excluded: looks like infrastructure/proxy network, not a single business' ELSE NULL END
+        CASE WHEN likely_infra_or_proxy THEN 'Excluded: looks like infrastructure/proxy network, not a single business' ELSE NULL END,
+        CASE WHEN is_network_provider THEN 'Excluded: looks like an ISP/hosting/telecom provider - exposed hosts are likely its customers, not the provider' ELSE NULL END
     ], x -> x IS NOT NULL) AS why
 FROM final
 """
