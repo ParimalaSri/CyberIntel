@@ -58,7 +58,9 @@ WITH base AS (
             list_filter(domains, d ->
                 lower(d) NOT IN ({SHARED_INFRA_SQL_LIST})
                 AND lower(d) NOT LIKE '%.arpa'
-                AND regexp_replace(lower(d), '\.$', '') LIKE '%.%'
+                -- a real domain: dotted labels with a name before the TLD
+                -- (rejects TLD-only fragments like '.de' / '.lol')
+                AND regexp_matches(regexp_replace(lower(d), '\.$', ''), '^[a-z0-9-]+(\.[a-z0-9-]+)+$')
             )[1]
         ELSE NULL END AS candidate_domain,
         CASE WHEN len(hostnames) > 0
@@ -76,7 +78,9 @@ tiered AS (
         CASE
             WHEN candidate_domain IS NOT NULL AND NOT is_dynamic_ptr AND NOT is_hyperscaler_org
                 THEN 'domain'
+            -- org keys under 3 chars ('SA', 'HT') are codes/noise, not company names
             WHEN org IS NOT NULL AND NOT is_hyperscaler_org AND NOT is_generic_isp_org
+                 AND length(regexp_replace(lower(trim(org)), '[\s.,]+$', '')) >= 3
                 THEN 'org'
             ELSE 'unresolved'
         END AS resolution_tier

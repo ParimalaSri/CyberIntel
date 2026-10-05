@@ -1,0 +1,32 @@
+﻿table,check,rows_in_scope,violations_or_count,pct,status,note
+companies,company_key not null,189129,0,0.0,Pass,
+companies,"resolution_tier in (domain, org)",189129,0,0.0,Pass,
+companies,"Grain: one row per (company_key, resolution_tier)",189129,0,0.0,Pass,
+companies,host_count >= 1,189129,0,0.0,Pass,
+companies,company_key has no surrounding spaces / trailing punctuation,189129,0,0.0,Pass,Domain-tier keys from Shodan can end in '.'; counted here
+companies,company_key is lowercase,189129,0,0.0,Pass,
+companies,"domain tier: key looks like a domain (letters, contains '.', no spaces/scheme/path)",134034,0,0.0,Pass,
+companies,domain tier: key is not an IP address,134034,0,0.0,Pass,
+companies,domain tier: key not in shared-infra/brand/placeholder denylist,134034,0,0.0,Pass,
+companies,org tier: key not a hyperscaler/CDN name,55095,0,0.0,Pass,
+companies,org tier: key not a generic consumer ISP name,55095,0,0.0,Pass,
+companies,org tier: key length >= 3,55095,0,0.0,Pass,
+companies,primary_country_code is 2 uppercase letters when present,189098,0,0.0,Pass,
+companies,primary_country_code not null,189129,31,0.016,Flagged,Feeds the fit score's country bonus
+companies,country_count >= 1 when primary_country_code present,189098,0,0.0,Pass,
+companies,sample_ips has 1-5 entries,189129,0,0.0,Pass,
+companies,likely_infra_or_proxy == (host_count >= 500),189129,0,0.0,Pass,
+companies,primary_org not null,189129,841,0.445,Flagged,Domain-tier companies can lack org
+companies,Same key present in both tiers (domain and org),189076,53,0.028,Info,"Info: scoring joins on key+tier, so this is handled"
+host_company_map,"key columns not null (ip_str, port, ts, company_key, tier)",1934191,0,0.0,Pass,
+host_company_map,"resolution_tier in (domain, org)",1934191,0,0.0,Pass,
+host_company_map,"Grain: unique (ip_str, port, ts)",1934191,0,0.0,Pass,
+host_company_map,"Every row exists in hosts (ip_str, port, ts)",1934191,0,0.0,Pass,
+host_company_map,"Every (company_key, tier) exists in companies",1934191,0,0.0,Pass,
+cross-table,Every company has at least one map row,189129,0,0.0,Pass,
+cross-table,sum(companies.host_count) == map rows,1934191,0,0.0,Pass,Violation = absolute difference
+cross-table,Per-company host_count matches map row count,189129,0,0.0,Pass,
+cross-table,Mapped tier matches host re-derivation: no map row for a null-IP host,1934191,0,0.0,Pass,IPv6 recovery means every host should have an ip_str
+profile,Hosts resolved at tier 'org',8914693,1267001,14.213,Info,share of all host rows
+profile,Hosts resolved at tier 'domain',8914693,667190,7.484,Info,share of all host rows
+profile,IPv6 hosts resolved to a company,8914693,5850,0.066,Info,recovered by the ipv6 fallback
