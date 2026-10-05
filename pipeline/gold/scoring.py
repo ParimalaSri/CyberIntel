@@ -22,23 +22,32 @@ TARGET_COUNTRIES_SQL = ", ".join(f"'{c}'" for c in sorted(TARGET_COUNTRIES))
 
 # Network providers (ISPs, telecoms, hosting/VPS/CDN, dynamic DNS) aggregate many
 # unrelated customers' machines under one name, so exposure on those hosts is
-# the customers', not the provider's. Matched against org + isp + company key.
-# Only applied to accounts with MIN_HOSTS_FOR_PROVIDER_FLAG+ hosts so a small
-# business with "network" in its name is not excluded.
-NETWORK_PROVIDER_KEYWORDS = sorted({
-    "telecom", "telekom", "telefon", "tele2", "telia", "telenor", "telus", "telenet",
-    "communications", "broadband", "cable", "fiber", "fibre", "internet", "isp",
-    "wireless", "mobile", "vodafone", "orange", "kddi", "ntt", "softbank", "biglobe",
-    "starlink", "bahnhof", "hosting", "vps", "server", "datacenter", "data center",
-    "dedicated", "cloud", "cdn", "amazonaws", "colocation", "ix ", "dyndns", "duckdns",
-    # generic stems that catch most remaining providers without a brand list
-    "host", "tele", "comunic", "srv", "network", "technology services",
+# the customers', not the provider's. STRONG terms (in the company key) say
+# "this is a hosting/infra provider" at any size. WEAK terms (in org + isp +
+# key) are common in ordinary business names, so they only count once an
+# account has MIN_HOSTS_FOR_WEAK_TERMS+ hosts.
+STRONG_PROVIDER_KEYWORDS = sorted({
+    "hosting", "host", "vps", "server", "srv", "cloud", "cdn", "dedicated",
+    "datacenter", "data center", "colocation", "amazonaws", "dyndns", "duckdns",
 })
-MIN_HOSTS_FOR_PROVIDER_FLAG = 50
+WEAK_PROVIDER_KEYWORDS = sorted({
+    "telecom", "telekom", "telefon", "tele", "tele2", "telia", "telenor", "telus",
+    "telenet", "communications", "comunic", "broadband", "cable", "fiber", "fibre",
+    "internet", "isp", "wireless", "mobile", "vodafone", "orange", "kddi", "ntt",
+    "softbank", "biglobe", "starlink", "bahnhof", "network", "technology services",
+    "ix ",
+})
+MIN_HOSTS_FOR_WEAK_TERMS = 50
 # A single business rarely spans this many ASNs; dynamic-DNS / proxy networks do.
 MAX_ASN_FOR_SINGLE_BUSINESS = 20
 PROVIDER_HAYSTACK = "lower(coalesce(primary_org, '') || ' ' || coalesce(primary_isp, '') || ' ' || company_key)"
-NETWORK_PROVIDER_SQL = " OR ".join(f"{PROVIDER_HAYSTACK} LIKE '%{k}%'" for k in NETWORK_PROVIDER_KEYWORDS)
+# Strong terms match the company's OWN key only: a tenant whose IP sits at
+# "HostGator" is not itself a hosting provider, so org/isp text must not count.
+STRONG_PROVIDER_SQL = " OR ".join(f"lower(company_key) LIKE '%{k}%'" for k in STRONG_PROVIDER_KEYWORDS)
+# At MIN_HOSTS_FOR_WEAK_TERMS+ hosts the org/isp text describes the account
+# itself, so every term (strong and weak) is matched against org + isp + key.
+LARGE_ACCOUNT_PROVIDER_SQL = " OR ".join(
+    f"{PROVIDER_HAYSTACK} LIKE '%{k}%'" for k in STRONG_PROVIDER_KEYWORDS + WEAK_PROVIDER_KEYWORDS)
 
 SQL = f"""
 WITH base AS (
@@ -65,7 +74,8 @@ WITH base AS (
 ),
 scored AS (
     SELECT *,
-        ((host_count >= {MIN_HOSTS_FOR_PROVIDER_FLAG} AND ({NETWORK_PROVIDER_SQL}))
+        (({STRONG_PROVIDER_SQL})
+         OR (host_count >= {MIN_HOSTS_FOR_WEAK_TERMS} AND ({LARGE_ACCOUNT_PROVIDER_SQL}))
          OR asn_count >= {MAX_ASN_FOR_SINGLE_BUSINESS}) AS is_network_provider,
         -- Fit (0-100): is this the right kind of customer
         (CASE WHEN resolution_tier = 'domain' THEN 40 ELSE 0 END)
@@ -76,22 +86,15 @@ scored AS (
         AS fit_score,
         -- Urgency (0-100): how exposed are they right now
         (CASE WHEN c2_count > 0 OR has_screenshot_evidence THEN 100 ELSE
-            LEAST(100,
             LEAST(25 * coalesce(max_epss, 0), 25)
             + (CASE WHEN has_recent_cve THEN 10 ELSE 0 END)
             + (CASE WHEN verified_cve_count > 0 THEN 10 ELSE 0 END)
             + (CASE WHEN eol_count > 0 THEN 15 ELSE 0 END)
             + (CASE WHEN self_signed_count > 0 THEN 10 ELSE 0 END)
             + (CASE WHEN risky_open_port_count > 0 THEN 20 ELSE 0 END)
-            -- known-exploited / ransomware CVEs outrank a plain high-EPSS CVE.
-            -- Scaled by the share of the account's hosts affected (full points at
-            -- 25%+), so a large ISP/hosting network with one affected host among
-            -- hundreds doesn't score like a company whose estate is mostly exposed.
-            + round(15 * LEAST(kev_host_count * 1.0 / host_count / 0.25, 1))
-            + round(10 * LEAST(ransomware_host_count * 1.0 / host_count / 0.25, 1))
-            + (CASE WHEN expired_cert_count > 0 THEN 5 ELSE 0 END)
-            + (CASE WHEN legacy_tls_count > 0 THEN 5 ELSE 0 END)
-            )
+            -- KEV / ransomware / expired-cert / legacy-TLS counts are surfaced in why[]
+            -- but deliberately NOT scored: unvalidated against outcomes, and they
+            -- favour large estates (see commit history for the rejected variants).
         END) AS urgency_score
     FROM base
 ),
