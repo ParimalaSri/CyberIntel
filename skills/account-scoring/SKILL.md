@@ -9,7 +9,7 @@ version: 1
 ## Why this exists
 
 The Gold-layer pipeline (`pipeline/gold/scoring.py`) computes a deterministic
-`fit_score` x `urgency_score` -> `contact_score` for every resolved company,
+`fit_score` and `urgency_score` -> `contact_score` for every resolved company,
 and bands the result: `contact` (>=85), `skip` (<50), `exclude`
 (honeypot/infrastructure noise), and `review` (50-84). The first three bands
 are rule-decided on purpose - fast, free, auditable, and there's nothing an
@@ -65,7 +65,10 @@ One JSON object per account, read from `data/gold/accounts.parquet`:
 ```
 
 - **contact** — override the borderline score, treat as if it had scored
-  >=85. Proceeds to Sprint 5 contact enrichment.
+  >=85. Proceeds to Sprint 5 contact enrichment. Record it as an LLM
+  override, distinct from a rule-decided `contact`. Requires a CVE plus an
+  *exposure* signal (risky port, screenshot, C2), or both *hygiene* signals
+  (EOL, self-signed), or one hygiene signal across many hosts.
 - **skip** — confirm the borderline score doesn't justify outreach.
 - **escalate** — neither rules nor the LLM should auto-decide this one; a
   human reviews it before it goes anywhere. Reserved for cases where the
@@ -74,7 +77,11 @@ One JSON object per account, read from `data/gold/accounts.parquet`:
 
 ## Dependent prompts
 
-`prompts/account_scoring/v1.md` — current version. Compare future versions
+`prompts/account_scoring/v2.md` — candidate; `v1.md` is the baseline
+(accuracy 0.786, skip recall 0.375: v1 over-contacted accounts with a CVE plus
+one weak signal and missed an ISP name). v2 splits signals into exposure vs.
+hygiene and checks identity (ISP names, WHOIS placeholders) first. Not
+promoted until it beats v1 on the labeled set. Compare future versions
 against it with `evals/run_eval.py` (Sprint 4, in progress) before
 promoting a new version; both the prompt file and the eval results are
 versioned so a v1-vs-v2 regression is visible in git history, not just
@@ -83,7 +90,7 @@ asserted.
 ## Model
 
 A single account-scoring call is a low-token, judgment-heavy, low-volume
-task (13,159 review-band accounts total, not millions) — this is exactly
+task (~11.7k review-band accounts total, not millions) — this is exactly
 where the take-home's cost-model guidance says to spend on a stronger
 model, not the cheapest one. See `docs/COST_MODEL.md` for the actual
 token/cost math once that's written.
@@ -149,6 +156,19 @@ borderline, opposite decision):
 Both examples score in the same narrow range (50-57); the label differs
 entirely on corroboration, not the number. That's the judgment this skill
 exists to make.
+
+## Decision boundaries
+
+| Situation | Label |
+|---|---|
+| ISP / telecom / hosting-style name | escalate |
+| WHOIS privacy placeholder name | skip |
+| Exposure signal (or 2+ types) but fit < ~25, or 1-3 hosts with an exposure signal | escalate |
+| CVE + exposure signal; or CVE + both hygiene signals; or CVE + hygiene across many hosts | contact |
+| CVE only, or CVE + one hygiene signal on 1-2 hosts | skip |
+
+The `escalate` example is `readydedis llc` (score 59): screenshot evidence is
+strong, but fit 18 and 3 hosts make it unclear this is a real business.
 
 ## Future extension (not yet built)
 

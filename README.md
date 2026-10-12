@@ -1,5 +1,9 @@
 # CyberIntel — AI Sales Intelligence Platform
 
+
+
+## simple change
+
 Turns a raw internet-wide scan export (Shodan-style, 84.6GB, ~8.9M records)
 into a ranked, explained account list for a cybersecurity software sales
 team: which companies actually need us right now, why, and who to contact.

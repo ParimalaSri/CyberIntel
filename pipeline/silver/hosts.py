@@ -29,6 +29,7 @@ JSON_COLUMNS = """{
     'isp': 'VARCHAR',
     'asn': 'VARCHAR',
     'os': 'VARCHAR',
+
     'product': 'VARCHAR',
     'devicetype': 'VARCHAR',
     'tags': 'VARCHAR[]',
@@ -46,7 +47,7 @@ JSON_COLUMNS = """{
     'http': 'STRUCT(
         status BIGINT, server VARCHAR, title VARCHAR, host VARCHAR,
         waf VARCHAR,
-        components MAP(VARCHAR, STRUCT(categories VARCHAR[])))',
+        components MAP(VARCHAR, STRUCT(categories VARCHAR[], versions VARCHAR[])))',
     '_shodan': 'STRUCT(module VARCHAR, region VARCHAR, ptr BOOLEAN)',
     'screenshot': 'STRUCT(labels VARCHAR[], text VARCHAR)'
 }"""
@@ -78,6 +79,7 @@ SELECT * REPLACE (
     CASE WHEN len(tags) = 0 THEN NULL ELSE tags END AS tags,
     CASE WHEN len(cpe23) = 0 THEN NULL ELSE cpe23 END AS cpe23,
     CASE WHEN len(screenshot_labels) = 0 THEN NULL ELSE screenshot_labels END AS screenshot_labels,
+    CASE WHEN len(http_tech) = 0 THEN NULL ELSE http_tech END AS http_tech,
     CASE WHEN cardinality(vulns) = 0 THEN NULL ELSE vulns END AS vulns
 ) FROM (
 SELECT * REPLACE (
@@ -136,6 +138,9 @@ SELECT * REPLACE (
         http.title              AS http_title,
         http.waf                AS http_waf,
         map_keys(http.components) AS http_components,
+        -- tech stack for outreach: one struct per detected technology
+        list_transform(map_entries(http.components),
+            e -> {{'name': e.key, 'categories': e.value.categories, 'versions': e.value.versions}}) AS http_tech,
         _shodan.module          AS shodan_module,
         screenshot.labels       AS screenshot_labels,
         nullif(screenshot.text, '') AS screenshot_text,
@@ -154,6 +159,7 @@ SELECT * REPLACE (
         columns = {JSON_COLUMNS},
         ignore_errors = true,
         maximum_object_size = 134217728
+        
     )
 )
 -- a row with neither ip_str nor ipv6 has no host identity to key on

@@ -1,5 +1,4 @@
 from pathlib import Path
-import duckdb
 
 SOURCE = Path(r"D:\Cyber_DataSet\2026-09-14T10-00-00.json")
 SAMPLE_JSON = Path(r"D:\Cyber_DataSet\data\samples\hosts_sample.json")
@@ -14,16 +13,4 @@ with open(SOURCE, "r", encoding="utf-8") as src, \
             break
         dst.write(line)
 
-duckdb.sql(f"""
-    COPY (
-        SELECT *
-        FROM read_json_auto(
-            '{SAMPLE_JSON.as_posix()}',
-            format='newline_delimited'
-        )
-    )
-    TO '{(SAMPLE_JSON.parent / "hosts_sample.parquet").as_posix()}'
-    (FORMAT PARQUET)
-""")
-
-print("Created sample")
+print(f"Created JSON sample: {SAMPLE_JSON}")

@@ -5,10 +5,12 @@
 <title>CyberIntel Command Center</title>
 <style>
   :root {
-    --bg: #0a0e1a; --surface: #121828; --surface-2: #171f33; --border: #232c42;
-    --ink: #eef1f7; --ink-soft: #97a1b8; --ink-faint: #616c85;
+    --bg: #0b1023; --surface: rgba(17, 24, 39, 0.9); --surface-2: rgba(24, 33, 52, 0.96); --border: rgba(148, 163, 184, 0.2);
+    --ink: #edf3ff; --ink-soft: #a9b7d0; --ink-faint: #7382a0;
     --purple: #8b5cf6; --blue: #38bdf8; --green: #34d399; --yellow: #fbbf24;
     --orange: #fb923c; --red: #f87171;
+    --shadow: 0 16px 38px rgba(15, 23, 42, 0.42);
+    --glow: 0 0 0 1px rgba(56, 189, 248, 0.16), 0 16px 30px rgba(56, 189, 248, 0.08);
   }
   * { box-sizing: border-box; }
   * { scrollbar-width: thin; scrollbar-color: #384258 transparent; }
@@ -17,51 +19,62 @@
   *::-webkit-scrollbar-thumb { background: #384258; border-radius: 8px; }
   *::-webkit-scrollbar-thumb:hover { background: #4a5570; }
   body {
-    margin: 0; background: radial-gradient(circle at 20% 0%, #16203a 0%, var(--bg) 55%);
-    color: var(--ink); font-family: system-ui, -apple-system, sans-serif; min-height: 100vh;
+    margin: 0; min-height: 100vh; color: var(--ink); font-family: system-ui, -apple-system, sans-serif;
+    background:
+      radial-gradient(circle at top left, rgba(139, 92, 246, 0.26), transparent 28%),
+      radial-gradient(circle at right center, rgba(56, 189, 248, 0.22), transparent 30%),
+      linear-gradient(180deg, #0a1020 0%, var(--bg) 100%);
   }
   .shell { display: flex; }
 
   /* sidebar */
   .sidebar { width: 76px; flex-shrink: 0; min-height: 100vh; display: flex; flex-direction: column;
-    align-items: center; padding: 20px 0; gap: 22px; border-right: 1px solid var(--border); }
+    align-items: center; padding: 20px 0; gap: 22px; border-right: 1px solid var(--border);
+    background: rgba(10, 15, 27, 0.74); backdrop-filter: blur(14px); }
   .logo { width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(135deg, var(--purple), var(--blue));
-    display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+    display: flex; align-items: center; justify-content: center; margin-bottom: 12px; box-shadow: 0 8px 25px rgba(139, 92, 246, 0.45); }
   .logo svg { width: 22px; height: 22px; }
   .nav-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
-    color: var(--ink-faint); cursor: default; }
-  .nav-icon.active { background: var(--surface-2); color: var(--blue); border: 1px solid var(--border); }
+    color: var(--ink-faint); cursor: default; transition: all 0.2s ease; }
+  .nav-icon.active { background: rgba(56, 189, 248, 0.08); color: var(--blue); border: 1px solid rgba(56, 189, 248, 0.22); box-shadow: var(--glow); }
   .nav-icon svg { width: 19px; height: 19px; }
 
   /* main */
   .main { flex: 1; padding: 28px 32px 60px; min-width: 0; }
   .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 26px; flex-wrap: wrap; gap: 12px; }
-  .title h1 { margin: 0; font-size: 24px; font-weight: 700; }
+  .title { display: flex; flex-direction: column; gap: 6px; }
+  .title h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.03em; }
   .title h1 span { color: var(--blue); }
-  .title p { margin: 4px 0 0; color: var(--ink-soft); font-size: 13px; }
+  .title p { margin: 0; color: var(--ink-soft); font-size: 13px; }
   .top-actions { display: flex; align-items: center; gap: 16px; }
-  .icon-btn { width: 38px; height: 38px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: center; color: var(--ink-soft); position: relative; }
+  .icon-btn { width: 38px; height: 38px; border-radius: 10px; background: rgba(18, 24, 40, 0.9); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center; color: var(--ink-soft); position: relative; box-shadow: inset 0 1px rgba(255,255,255,0.03); }
   .icon-btn svg { width: 17px; height: 17px; }
-  .badge { position: absolute; top: -5px; right: -5px; background: var(--orange); color: #1a0f00; font-size: 10px;
-    font-weight: 700; border-radius: 8px; padding: 1px 5px; }
+  .badge { position: absolute; top: -5px; right: -5px; background: linear-gradient(180deg, #fdba74, var(--orange)); color: #1a0f00; font-size: 10px;
+    font-weight: 700; border-radius: 8px; padding: 1px 5px; box-shadow: 0 6px 18px rgba(251, 146, 60, 0.6); }
   .avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, var(--purple), var(--blue));
-    display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+    display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; box-shadow: 0 8px 26px rgba(56, 189, 248, 0.28); }
 
   .grid { display: grid; grid-template-columns: 1.1fr 1.7fr 1.1fr; gap: 20px; align-items: start; }
   @media (max-width: 1100px) { .grid { grid-template-columns: 1fr; } }
 
-  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
-  .panel-head { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
-  .panel-head .bar { width: 4px; height: 16px; border-radius: 2px; }
+  .panel { position: relative; background: linear-gradient(180deg, rgba(18, 24, 40, 0.96), rgba(12, 18, 31, 0.9));
+    border: 1px solid var(--border); border-radius: 18px; padding: 20px; box-shadow: var(--shadow);
+    overflow: hidden; }
+  .panel::before { content: ""; position: absolute; inset: 0 auto auto 0; width: 120px; height: 120px;
+    background: radial-gradient(circle, rgba(56, 189, 248, 0.14), transparent 70%); pointer-events: none; }
+  .panel-head { position: relative; display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+  .panel-head .bar { width: 4px; height: 16px; border-radius: 2px; box-shadow: 0 0 12px currentColor; }
   .panel-head h2 { margin: 0; font-size: 15px; font-weight: 700; }
   .panel-sub { color: var(--ink-soft); font-size: 12px; margin: 2px 0 16px; }
 
   /* client cards */
   .client-list { display: flex; flex-direction: column; gap: 12px; max-height: 560px; overflow-y: auto; }
-  .client-card { background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .client-card { background: linear-gradient(180deg, rgba(28, 37, 58, 0.96), rgba(21, 29, 45, 0.9));
+    border: 1px solid rgba(148, 163, 184, 0.18); border-radius: 12px; padding: 14px 16px; transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease; }
+  .client-card:hover { transform: translateY(-1px); border-color: rgba(56, 189, 248, 0.3); box-shadow: 0 10px 26px rgba(15, 23, 42, 0.22); }
   .client-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 10px currentColor; }
   .client-name { font-weight: 700; font-size: 14px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .client-band { font-size: 11px; font-weight: 700; text-transform: uppercase; }
   .client-metrics { display: flex; justify-content: space-between; margin-bottom: 8px; }
@@ -75,19 +88,21 @@
 
   /* center */
   .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 18px; }
-  .stat-tile { background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 14px; text-align: center; }
+  .stat-tile { background: linear-gradient(180deg, rgba(28, 37, 58, 0.96), rgba(24, 31, 45, 0.9));
+    border: 1px solid rgba(148, 163, 184, 0.18); border-radius: 12px; padding: 14px; text-align: center; }
   .stat-tile .n { font-size: 22px; font-weight: 700; }
   .stat-tile .l { font-size: 11px; color: var(--ink-soft); margin-top: 4px; }
 
   .bars { display: flex; align-items: flex-end; gap: 18px; height: 200px; padding: 10px 6px 0; }
   .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
-  .bar-shape { width: 100%; max-width: 56px; border-radius: 8px 8px 0 0; }
+  .bar-shape { width: 100%; max-width: 56px; border-radius: 8px 8px 0 0; box-shadow: 0 10px 22px rgba(56, 189, 248, 0.12); }
   .bar-count { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
   .bar-name { font-size: 11px; color: var(--ink-soft); margin-top: 8px; text-transform: capitalize; }
 
   /* right band cards */
-  .band-card { display: flex; align-items: center; gap: 12px; background: var(--surface-2); border: 1px solid var(--border);
-    border-left: 3px solid var(--blue); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; }
+  .band-card { display: flex; align-items: center; gap: 12px; background: linear-gradient(180deg, rgba(28, 37, 58, 0.96), rgba(20, 27, 39, 0.9));
+    border: 1px solid rgba(148, 163, 184, 0.18); border-left: 3px solid var(--blue); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; transition: transform 0.18s ease, border-color 0.18s ease; }
+  .band-card:hover { transform: translateX(1px); border-color: rgba(56, 189, 248, 0.22); }
   .band-card .ic { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .band-card .ic svg { width: 16px; height: 16px; }
   .band-card .info { flex: 1; min-width: 0; }
@@ -95,30 +110,31 @@
   .band-card .info span { font-size: 11px; color: var(--ink-soft); }
   .band-card .count { font-size: 17px; font-weight: 700; }
 
-  .country-row { display: flex; justify-content: space-between; align-items: center; background: var(--surface-2);
-    border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; margin-bottom: 8px; font-size: 12.5px; }
+  .country-row { display: flex; justify-content: space-between; align-items: center; background: rgba(22, 30, 46, 0.95);
+    border: 1px solid rgba(148, 163, 184, 0.18); border-radius: 10px; padding: 10px 14px; margin-bottom: 8px; font-size: 12.5px; }
   .country-row .n { color: var(--blue); font-weight: 700; }
 
   /* chat widget bottom-right */
   #chat-bubble { position: fixed; right: 24px; bottom: 24px; width: 54px; height: 54px; border-radius: 50%;
     background: linear-gradient(135deg, var(--purple), var(--blue)); color: #fff; display: flex; align-items: center;
-    justify-content: center; font-size: 22px; cursor: pointer; box-shadow: 0 6px 18px rgba(139,92,246,.4); z-index: 100; }
-  #chat-panel { position: fixed; right: 24px; bottom: 88px; width: 360px; height: 460px; background: var(--surface);
-    border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 10px 40px rgba(0,0,0,.5); display: none;
-    flex-direction: column; overflow: hidden; z-index: 100; }
+    justify-content: center; font-size: 22px; cursor: pointer; box-shadow: 0 12px 30px rgba(139,92,246,.42); z-index: 100; }
+  #chat-panel { position: fixed; right: 24px; bottom: 88px; width: 360px; height: 460px; background: rgba(12, 18, 31, 0.96);
+    border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,.45); display: none;
+    flex-direction: column; overflow: hidden; z-index: 100; backdrop-filter: blur(18px); }
   #chat-panel.open { display: flex; }
-  #chat-header { background: var(--surface-2); border-bottom: 1px solid var(--border); color: var(--ink); padding: 12px 16px; font-size: 14px; font-weight: 700; }
+  #chat-header { background: linear-gradient(180deg, rgba(26, 36, 54, 0.9), rgba(18, 25, 38, 0.9)); border-bottom: 1px solid var(--border); color: var(--ink); padding: 12px 16px; font-size: 14px; font-weight: 700; }
   #chat-log { flex: 1; padding: 12px; overflow-y: auto; font-size: 13px; }
   .msg { margin-bottom: 10px; line-height: 1.4; }
   .msg.user { text-align: right; }
-  .msg.user span { background: var(--purple); color: #fff; padding: 6px 11px; border-radius: 10px; display: inline-block; }
-  .msg.bot .bubble { background: var(--surface-2); border: 1px solid var(--border); padding: 7px 11px; border-radius: 10px; display: inline-block; white-space: pre-wrap; max-width: 100%; }
+  .msg.user span { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: #fff; padding: 6px 11px; border-radius: 10px; display: inline-block; box-shadow: 0 8px 18px rgba(139,92,246,.28); }
+  .msg.bot .bubble { background: rgba(25, 34, 51, 0.96); border: 1px solid var(--border); padding: 7px 11px; border-radius: 10px; display: inline-block; white-space: pre-wrap; max-width: 100%; }
   .msg.bot table.chat-table { border-collapse: collapse; margin-top: 6px; font-size: 12px; width: 100%; }
   .msg.bot table.chat-table th, .msg.bot table.chat-table td { border: 1px solid var(--border); padding: 4px 6px; text-align: left; }
-  .msg.bot table.chat-table th { background: var(--surface-2); }
-  #chat-form { display: flex; gap: 6px; padding: 10px; border-top: 1px solid var(--border); }
-  #chat-input { flex: 1; padding: 9px; border: 1px solid var(--border); background: var(--surface-2); color: var(--ink); border-radius: 8px; font-size: 13px; }
-  #chat-send { padding: 9px 14px; border: none; background: var(--purple); color: #fff; border-radius: 8px; cursor: pointer; }
+  .msg.bot table.chat-table th { background: rgba(17, 24, 39, 0.96); }
+  #chat-form { display: flex; gap: 6px; padding: 10px; border-top: 1px solid var(--border); background: rgba(15, 20, 31, 0.9); }
+  #chat-input { flex: 1; padding: 9px; border: 1px solid rgba(148, 163, 184, 0.24); background: rgba(17, 24, 39, 0.9); color: var(--ink); border-radius: 8px; font-size: 13px; }
+  #chat-input:focus { outline: none; border-color: rgba(56, 189, 248, 0.7); box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12); }
+  #chat-send { padding: 9px 14px; border: none; background: linear-gradient(135deg, var(--purple), var(--blue)); color: #fff; border-radius: 8px; cursor: pointer; font-weight: 600; }
   #chat-send:disabled { opacity: 0.5; }
 </style>
 </head>
@@ -139,7 +155,12 @@
   <div class="main">
     <div class="topbar">
       <div class="title">
-        <h1>CyberIntel <span>Command Center</span></h1>
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <h1>CyberIntel <span>Command Center</span></h1>
+          <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.25);color:#8bf0c2;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">
+            <span style="width:7px;height:7px;border-radius:50%;background:#34d399;display:inline-block;box-shadow:0 0 12px rgba(52,211,153,0.8);"></span> Live Data
+          </span>
+        </div>
         <p>Sales Intelligence Platform &mdash; live Gold-layer data</p>
       </div>
       <div class="top-actions">
