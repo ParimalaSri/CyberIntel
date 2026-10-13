@@ -66,6 +66,7 @@ WITH base AS (
         s.cve_count, s.verified_cve_count, s.max_cvss, s.max_epss, s.has_recent_cve,
         s.eol_count, s.self_signed_count, s.honeypot_count, s.c2_count,
         s.risky_open_port_count, s.distinct_port_count, s.database_tag_count,
+        s.db_exposed_cve_host_count,
         s.kev_host_count, s.ransomware_host_count, s.expired_cert_count, s.legacy_tls_count,
         s.has_screenshot_evidence, s.screenshot_evidence_text
     FROM read_parquet('{COMPANIES_PATH}') c
@@ -85,7 +86,7 @@ scored AS (
         + (CASE WHEN primary_country_code IN ({TARGET_COUNTRIES_SQL}) THEN 20 ELSE 10 END)
         AS fit_score,
         -- Urgency (0-100): how exposed are they right now
-        (CASE WHEN c2_count > 0 OR has_screenshot_evidence THEN 100 ELSE
+        (CASE WHEN c2_count > 0 OR has_screenshot_evidence OR db_exposed_cve_host_count > 0 THEN 100 ELSE
             LEAST(25 * coalesce(max_epss, 0), 25)
             + (CASE WHEN has_recent_cve THEN 10 ELSE 0 END)
             + (CASE WHEN verified_cve_count > 0 THEN 10 ELSE 0 END)
@@ -116,6 +117,9 @@ SELECT *,
             (CASE WHEN screenshot_evidence_text IS NOT NULL
                   THEN ' (OCR text visible on screen: "' || left(screenshot_evidence_text, 120) || '")'
                   ELSE '' END)
+        ELSE NULL END,
+        CASE WHEN db_exposed_cve_host_count > 0 THEN
+            db_exposed_cve_host_count || ' host(s) with MongoDB/Redis exposed and known CVE(s)'
         ELSE NULL END,
         CASE WHEN cve_count > 0 THEN
             cve_count || ' known CVE(s), max CVSS ' || max_cvss ||

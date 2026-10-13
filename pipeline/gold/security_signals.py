@@ -58,7 +58,9 @@ per_host AS (
         CASE WHEN vulns IS NOT NULL AND cardinality(vulns) > 0
              THEN len(list_filter(map_values(vulns), x -> x.verified))
              ELSE 0 END AS row_verified_cve_count,
-        (port IN ({RISKY_PORTS_SQL_LIST})) AS is_risky_port
+        (port IN ({RISKY_PORTS_SQL_LIST})) AS is_risky_port,
+        -- MongoDB/Redis exposed on a host that also carries a CVE
+        (port IN (27017, 6379) AND coalesce(cardinality(vulns), 0) > 0) AS is_db_exposed_with_cve
     FROM joined
 )
 SELECT
@@ -78,6 +80,7 @@ SELECT
     CAST(coalesce(sum(is_vpn::INT), 0) AS BIGINT) AS vpn_count,
     CAST(coalesce(sum(is_database_tag::INT), 0) AS BIGINT) AS database_tag_count,
     CAST(coalesce(sum(is_risky_port::INT), 0) AS BIGINT) AS risky_open_port_count,
+    CAST(coalesce(sum(is_db_exposed_with_cve::INT), 0) AS BIGINT) AS db_exposed_cve_host_count,
     -- host-level counts from the Silver kev/ransomware flags and TLS hygiene fields
     CAST(coalesce(sum(has_kev_cve::INT), 0) AS BIGINT) AS kev_host_count,
     CAST(coalesce(sum(has_ransomware_cve::INT), 0) AS BIGINT) AS ransomware_host_count,
